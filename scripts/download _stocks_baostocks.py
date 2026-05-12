@@ -152,6 +152,7 @@ def adjust_to_baostock_flag(adjust: str) -> str:
     raise ValueError(f"Unknown adjust type: {adjust}")
 
 
+
 # =========================================================
 # Single-stock downloader
 # =========================================================
@@ -462,60 +463,170 @@ def download_stock_panel(
     return panel
 
 
+# # =========================================================
+# # Main
+# # =========================================================
+
+# def main() -> None:
+#     symbols = [
+#         # 金融
+#         "000001",  # 平安银行
+#         "600000",  # 浦发银行
+#         "600036",  # 招商银行
+#         "601318",  # 中国平安
+#         "600030",  # 中信证券
+
+#         # 消费
+#         "600519",  # 贵州茅台
+#         "000858",  # 五粮液
+#         "000333",  # 美的集团
+#         "000651",  # 格力电器
+#         "600887",  # 伊利股份
+
+#         # 医药
+#         "600276",  # 恒瑞医药
+#         "300760",  # 迈瑞医疗
+#         "000538",  # 云南白药
+
+#         # 科技与电子
+#         "002415",  # 海康威视
+#         "000725",  # 京东方A
+#         "002475",  # 立讯精密
+#         "603501",  # 韦尔股份
+#         "000063",  # 中兴通讯
+
+#         # 新能源与汽车
+#         "300750",  # 宁德时代
+#         "002594",  # 比亚迪
+#         "601012",  # 隆基绿能
+#         "600438",  # 通威股份
+
+#         # 工业与材料
+#         "601668",  # 中国建筑
+#         "600309",  # 万华化学
+#         "600031",  # 三一重工
+#         "601899",  # 紫金矿业
+
+#         # 能源与公用事业
+#         "601088",  # 中国神华
+#         "600028",  # 中国石化
+#         "601857",  # 中国石油
+#         "600900",  # 长江电力
+#     ]
+
+    
+
+#     panel = download_stock_panel(
+#         symbols=symbols,
+#         start_date="20150101",
+#         end_date="20251231",
+#         adjust="qfq",
+#         force_download=False,
+#         sleep_seconds=1.0,
+#     )
+
+#     print("\nDownload completed.")
+#     print("Panel shape:", panel.shape)
+
+
 # =========================================================
-# Main
+# HS300 constituent loader
 # =========================================================
+
+# =========================================================
+# HS300 constituent loader
+# =========================================================
+
+def get_hs300_symbols(index_date: str | None = None) -> list[str]:
+    """
+    Get CSI 300 / HS300 constituent stock codes from BaoStock.
+
+    Parameters
+    ----------
+    index_date:
+        Date in YYYYMMDD or YYYY-MM-DD format.
+        If None, BaoStock returns the latest available HS300 constituents.
+        Some BaoStock versions may not support the date argument, so this
+        function falls back to query_hs300_stocks() automatically.
+
+    Returns
+    -------
+    list[str]
+        Normal 6-digit stock codes, e.g. ["600519", "000001"].
+    """
+    baostock_login()
+
+    if index_date is not None:
+        index_date = normalize_date(index_date)
+
+    try:
+        if index_date is None:
+            rs = bs.query_hs300_stocks()
+        else:
+            try:
+                rs = bs.query_hs300_stocks(date=index_date)
+            except TypeError:
+                print(
+                    "[HS300] Current BaoStock version does not support "
+                    "date argument. Falling back to latest constituents."
+                )
+                rs = bs.query_hs300_stocks()
+
+        if rs.error_code != "0":
+            raise RuntimeError(
+                f"BaoStock error_code={rs.error_code}, error_msg={rs.error_msg}"
+            )
+
+        data = []
+        while rs.next():
+            data.append(rs.get_row_data())
+
+        df = pd.DataFrame(data, columns=rs.fields)
+
+        if df.empty:
+            raise RuntimeError("Empty HS300 constituent list returned by BaoStock.")
+
+        print("[HS300] Raw columns:", list(df.columns))
+        print("[HS300] Raw shape:", df.shape)
+
+        # Usually BaoStock returns columns like:
+        # date, code, code_name
+        if "code" not in df.columns:
+            raise ValueError(f"'code' column not found. Current columns: {list(df.columns)}")
+
+        df["ticker"] = df["code"].astype(str).str.split(".").str[-1].str.zfill(6)
+
+        symbols = sorted(df["ticker"].unique().tolist())
+
+        # Save constituent table for reproducibility.
+        if index_date is None:
+            output_file = DATA_DIR / "hs300_constituents_latest_baostock.csv"
+        else:
+            output_file = DATA_DIR / f"hs300_constituents_{index_date.replace('-', '')}_baostock.csv"
+
+        df.to_csv(output_file, index=False, encoding="utf-8-sig")
+        print(f"[HS300] Constituents saved to: {output_file}")
+        print(f"[HS300] Number of stocks: {len(symbols)}")
+
+        return symbols
+
+    except Exception as exc:
+        raise RuntimeError(f"Failed to get HS300 symbols: {exc}") from exc
+
 
 def main() -> None:
-    symbols = [
-        # 金融
-        "000001",  # 平安银行
-        "600000",  # 浦发银行
-        "600036",  # 招商银行
-        "601318",  # 中国平安
-        "600030",  # 中信证券
+    # 如果你想获取最新沪深 300 成分股：
+    symbols = get_hs300_symbols(index_date=20251231)
 
-        # 消费
-        "600519",  # 贵州茅台
-        "000858",  # 五粮液
-        "000333",  # 美的集团
-        "000651",  # 格力电器
-        "600887",  # 伊利股份
+    # 如果你想固定为某个日期的沪深 300 成分股，例如 2024 年末：
+    # symbols = get_hs300_symbols(index_date="20241231")
 
-        # 医药
-        "600276",  # 恒瑞医药
-        "300760",  # 迈瑞医疗
-        "000538",  # 云南白药
-
-        # 科技与电子
-        "002415",  # 海康威视
-        "000725",  # 京东方A
-        "002475",  # 立讯精密
-        "603501",  # 韦尔股份
-        "000063",  # 中兴通讯
-
-        # 新能源与汽车
-        "300750",  # 宁德时代
-        "002594",  # 比亚迪
-        "601012",  # 隆基绿能
-        "600438",  # 通威股份
-
-        # 工业与材料
-        "601668",  # 中国建筑
-        "600309",  # 万华化学
-        "600031",  # 三一重工
-        "601899",  # 紫金矿业
-
-        # 能源与公用事业
-        "601088",  # 中国神华
-        "600028",  # 中国石化
-        "601857",  # 中国石油
-        "600900",  # 长江电力
-    ]
+    print("\nHS300 symbols:")
+    print(symbols)
 
     panel = download_stock_panel(
         symbols=symbols,
-        start_date="20150101",
+        start_date="20160101",
         end_date="20251231",
         adjust="qfq",
         force_download=False,
@@ -524,6 +635,9 @@ def main() -> None:
 
     print("\nDownload completed.")
     print("Panel shape:", panel.shape)
+
+
+
 
 
 if __name__ == "__main__":
