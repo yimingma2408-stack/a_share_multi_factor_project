@@ -2,7 +2,7 @@ from pathlib import Path
 import time
 import random
 
-import akshare as ak
+import baostock as bs
 import pandas as pd
 
 
@@ -23,6 +23,8 @@ START_DATE = "20200101"
 END_DATE = "20241231"
 ADJUST = "qfq"
 
+DATA_SOURCE = "baostock"
+
 STANDARD_COLS = [
     "date",
     "ticker",
@@ -38,6 +40,119 @@ STANDARD_COLS = [
 
 
 # =========================================================
+# BaoStock login status
+# =========================================================
+
+_BAOSTOCK_LOGGED_IN = False
+
+
+def baostock_login() -> None:
+    """
+    Login to BaoStock once.
+    """
+    global _BAOSTOCK_LOGGED_IN
+
+    if _BAOSTOCK_LOGGED_IN:
+        return
+
+    lg = bs.login()
+    print("BaoStock login:", lg.error_code, lg.error_msg)
+
+    if lg.error_code != "0":
+        raise RuntimeError(f"BaoStock login failed: {lg.error_msg}")
+
+    _BAOSTOCK_LOGGED_IN = True
+
+
+def baostock_logout() -> None:
+    """
+    Logout from BaoStock.
+    """
+    global _BAOSTOCK_LOGGED_IN
+
+    if _BAOSTOCK_LOGGED_IN:
+        bs.logout()
+        _BAOSTOCK_LOGGED_IN = False
+
+
+# =========================================================
+# Helper functions
+# =========================================================
+
+def normalize_date(date_str: str) -> str:
+    """
+    Convert YYYYMMDD or YYYY-MM-DD to YYYY-MM-DD.
+
+    BaoStock requires dates in YYYY-MM-DD format.
+    """
+    date_str = str(date_str)
+
+    if "-" in date_str:
+        return date_str
+
+    if len(date_str) == 8:
+        return f"{date_str[:4]}-{date_str[4:6]}-{date_str[6:]}"
+
+    raise ValueError(f"Invalid date format: {date_str}")
+
+
+def stock_code_to_baostock_code(stock_code: str) -> str:
+    """
+    Convert normal A-share stock code to BaoStock code.
+
+    Examples
+    --------
+    600519 -> sh.600519
+    000001 -> sz.000001
+    300750 -> sz.300750
+    """
+    stock_code = str(stock_code).zfill(6)
+
+    if stock_code.startswith("6"):
+        return f"sh.{stock_code}"
+
+    if stock_code.startswith(("0", "2", "3")):
+        return f"sz.{stock_code}"
+
+    raise ValueError(f"Unsupported A-share stock code: {stock_code}")
+
+
+def baostock_code_to_ticker(bs_code: str) -> str:
+    """
+    Convert BaoStock code to normal ticker.
+
+    Examples
+    --------
+    sh.600519 -> 600519
+    sz.000001 -> 000001
+    """
+    return str(bs_code).split(".")[-1].zfill(6)
+
+
+def adjust_to_baostock_flag(adjust: str) -> str:
+    """
+    Convert adjustment type to BaoStock adjustflag.
+
+    BaoStock adjustflag:
+        1: 后复权
+        2: 前复权
+        3: 不复权
+    """
+    adjust = adjust.lower()
+
+    if adjust in ["qfq", "forward"]:
+        return "2"
+
+    if adjust in ["hfq", "backward"]:
+        return "1"
+
+    if adjust in ["none", "raw", "bfq", ""]:
+        return "3"
+
+    raise ValueError(f"Unknown adjust type: {adjust}")
+
+
+# =========================================================
 # Single-stock downloader
 # =========================================================
 
@@ -47,21 +162,24 @@ def download_one_stock(
     end_date: str = END_DATE,
     adjust: str = ADJUST,
     max_retries: int = 3,
-    sleep_seconds: float = 5.0,
+    sleep_seconds: float = 2.0,
 ) -> pd.DataFrame:
     """
-    Download daily A-share data for one stock from AkShare.
+    Download daily A-share data for one stock from BaoStock.
 
     Parameters
     ----------
     stock_code:
         Stock code, e.g. "000001", "600519".
     start_date:
-        Start date in YYYYMMDD format.
+        Start date in YYYYMMDD or YYYY-MM-DD format.
     end_date:
-        End date in YYYYMMDD format.
+        End date in YYYYMMDD or YYYY-MM-DD format.
     adjust:
-        Adjustment type. "qfq" means forward-adjusted price.
+        Adjustment type.
+        "qfq" means forward-adjusted price.
+        "hfq" means backward-adjusted price.
+        "none" means unadjusted price.
     max_retries:
         Maximum number of retry attempts.
     sleep_seconds:
@@ -73,30 +191,43 @@ def download_one_stock(
         Standardized stock data with columns:
         date, ticker, open, high, low, close, volume, amount, pct_change, turnover.
     """
+    baostock_login()
+
     stock_code = str(stock_code).zfill(6)
+    bs_code = stock_code_to_baostock_code(stock_code)
+
+    start_date = normalize_date(start_date)
+    end_date = normalize_date(end_date)
+    adjustflag = adjust_to_baostock_flag(adjust)
+
+    fields = (
+        "date,code,open,high,low,close,"
+        "volume,amount,turn,pctChg,tradestatus,isST"
+    )
 
     for attempt in range(1, max_retries + 1):
         try:
             print(f"[{stock_code}] Download attempt {attempt}/{max_retries}...")
 
-            try:
-                df = ak.stock_zh_a_hist(
-                    symbol=stock_code,
-                    period="daily",
-                    start_date=start_date,
-                    end_date=end_date,
-                    adjust=adjust,
-                    timeout=30,
+            rs = bs.query_history_k_data_plus(
+                code=bs_code,
+                fields=fields,
+                start_date=start_date,
+                end_date=end_date,
+                frequency="d",
+                adjustflag=adjustflag,
+            )
+
+            if rs.error_code != "0":
+                raise RuntimeError(
+                    f"BaoStock error_code={rs.error_code}, error_msg={rs.error_msg}"
                 )
-            except TypeError:
-                # Some AkShare versions may not support timeout.
-                df = ak.stock_zh_a_hist(
-                    symbol=stock_code,
-                    period="daily",
-                    start_date=start_date,
-                    end_date=end_date,
-                    adjust=adjust,
-                )
+
+            data = []
+            while rs.next():
+                data.append(rs.get_row_data())
+
+            df = pd.DataFrame(data, columns=rs.fields)
 
             print(f"[{stock_code}] Raw shape: {df.shape}")
             print(f"[{stock_code}] Raw columns: {list(df.columns)}")
@@ -107,24 +238,25 @@ def download_one_stock(
                 continue
 
             rename_dict = {
-                "日期": "date",
-                "股票代码": "ticker",
-                "开盘": "open",
-                "收盘": "close",
-                "最高": "high",
-                "最低": "low",
-                "成交量": "volume",
-                "成交额": "amount",
-                "振幅": "amplitude",
-                "涨跌幅": "pct_change",
-                "涨跌额": "change",
-                "换手率": "turnover",
+                "date": "date",
+                "code": "ticker",
+                "open": "open",
+                "high": "high",
+                "low": "low",
+                "close": "close",
+                "volume": "volume",
+                "amount": "amount",
+                "pctChg": "pct_change",
+                "turn": "turnover",
             }
 
             df = df.rename(columns=rename_dict)
 
-            if "ticker" not in df.columns:
-                df["ticker"] = stock_code
+            # Keep only normal trading days if tradestatus is available.
+            if "tradestatus" in df.columns:
+                df = df[df["tradestatus"] == "1"].copy()
+
+            df["ticker"] = df["ticker"].map(baostock_code_to_ticker)
 
             missing_cols = [col for col in STANDARD_COLS if col not in df.columns]
             if missing_cols:
@@ -177,16 +309,16 @@ def load_or_download_one_stock(
 ) -> pd.DataFrame:
     """
     Load stock data from local CSV if available.
-    Otherwise download from AkShare.
+    Otherwise download from BaoStock.
 
     Parameters
     ----------
     stock_code:
         Stock code.
     start_date:
-        Start date in YYYYMMDD format.
+        Start date in YYYYMMDD or YYYY-MM-DD format.
     end_date:
-        End date in YYYYMMDD format.
+        End date in YYYYMMDD or YYYY-MM-DD format.
     adjust:
         Adjustment type.
     force_download:
@@ -198,7 +330,7 @@ def load_or_download_one_stock(
         Standardized stock data.
     """
     stock_code = str(stock_code).zfill(6)
-    output_file = DATA_DIR / f"{stock_code}_daily_{adjust}.csv"
+    output_file = DATA_DIR / f"{stock_code}_daily_{adjust}_{DATA_SOURCE}.csv"
 
     if output_file.exists() and not force_download:
         print(f"[{stock_code}] Local file exists. Loading from local CSV.")
@@ -243,7 +375,7 @@ def download_stock_panel(
     end_date: str = END_DATE,
     adjust: str = ADJUST,
     force_download: bool = False,
-    sleep_seconds: float = 5.0,
+    sleep_seconds: float = 1.0,
 ) -> pd.DataFrame:
     """
     Download or load a panel of A-share stocks.
@@ -253,9 +385,9 @@ def download_stock_panel(
     symbols:
         List of stock codes.
     start_date:
-        Start date in YYYYMMDD format.
+        Start date in YYYYMMDD or YYYY-MM-DD format.
     end_date:
-        End date in YYYYMMDD format.
+        End date in YYYYMMDD or YYYY-MM-DD format.
     adjust:
         Adjustment type.
     force_download:
@@ -270,38 +402,44 @@ def download_stock_panel(
     """
     data_list = []
 
-    for symbol in symbols:
-        symbol = str(symbol).zfill(6)
+    baostock_login()
 
-        print("=" * 80)
-        print(f"Processing {symbol}")
+    try:
+        for symbol in symbols:
+            symbol = str(symbol).zfill(6)
 
-        df = load_or_download_one_stock(
-            stock_code=symbol,
-            start_date=start_date,
-            end_date=end_date,
-            adjust=adjust,
-            force_download=force_download,
-        )
+            print("=" * 80)
+            print(f"Processing {symbol}")
 
-        if df.empty:
-            print(f"[{symbol}] Skipped because data is empty.")
-            continue
+            df = load_or_download_one_stock(
+                stock_code=symbol,
+                start_date=start_date,
+                end_date=end_date,
+                adjust=adjust,
+                force_download=force_download,
+            )
 
-        data_list.append(df)
+            if df.empty:
+                print(f"[{symbol}] Skipped because data is empty.")
+                continue
 
-        time.sleep(sleep_seconds + random.random())
+            data_list.append(df)
+
+            time.sleep(sleep_seconds + random.random())
+
+    finally:
+        baostock_logout()
 
     if not data_list:
         raise RuntimeError(
             "No valid stock data was downloaded or loaded. "
-            "Please test one stock first, check network, AkShare, stock codes, and date format."
+            "Please test one stock first, check network, BaoStock, stock codes, and date format."
         )
 
     panel = pd.concat(data_list, ignore_index=True)
     panel = panel.sort_values(["ticker", "date"]).reset_index(drop=True)
 
-    panel_file = DATA_DIR / f"stocks_panel_daily_{adjust}.csv"
+    panel_file = DATA_DIR / f"stocks_panel_daily_{adjust}_{DATA_SOURCE}.csv"
     panel.to_csv(panel_file, index=False, encoding="utf-8-sig")
 
     print("=" * 80)
@@ -377,11 +515,11 @@ def main() -> None:
 
     panel = download_stock_panel(
         symbols=symbols,
-        start_date="20200101",
-        end_date="20241231",
+        start_date="20150101",
+        end_date="20251231",
         adjust="qfq",
         force_download=False,
-        sleep_seconds=5.0,
+        sleep_seconds=1.0,
     )
 
     print("\nDownload completed.")
