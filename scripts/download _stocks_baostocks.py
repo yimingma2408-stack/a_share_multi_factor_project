@@ -19,8 +19,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 # Global settings
 # =========================================================
 
-START_DATE = "20200101"
-END_DATE = "20241231"
+START_DATE = "20160101"
+END_DATE = "20251231"
 ADJUST = "qfq"
 
 DATA_SOURCE = "baostock"
