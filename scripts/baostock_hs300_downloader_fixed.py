@@ -13,7 +13,7 @@ import pandas as pd
 # Paths and global settings
 # =========================================================
 
-try:
+try:    
     PROJECT_DIR = Path(__file__).resolve().parents[1]
 except NameError:  # Jupyter / interactive mode
     PROJECT_DIR = Path.cwd()
