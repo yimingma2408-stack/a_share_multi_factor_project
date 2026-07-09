@@ -72,7 +72,10 @@ def read_parquet(path: Path) -> pd.DataFrame:
 
 
 def write_parquet(df: pd.DataFrame, path: Path) -> None:
-    df.to_parquet(path, index=False, engine="fastparquet")
+    try:
+        df.to_parquet(path, index=False, engine="fastparquet")
+    except ImportError:
+        df.to_parquet(path, index=False)
 
 
 def safe_float(x: float | int | np.floating | None) -> float:
@@ -766,7 +769,7 @@ def create_final_report(
         "- Forward-adjusted OHLC data, amount, turnover, trade status, ST flag, and dynamic HS300 membership are available.",
         "- The main panel spans 2016-01-04 to 2025-12-31, enough for 36-month base + 6-month recent rolling drift windows.",
         "- Industry, market capitalization, financial statement data, and strict limit-up/limit-down filtering are not available.",
-        "- `quant` conda environment was used; POT is available, `pyarrow` is missing, and `fastparquet` is used for parquet output.",
+        "- `quant` conda environment was used; POT and parquet support are required. Output uses `fastparquet` when available and otherwise falls back to the default pandas parquet engine.",
         "",
         "## 3. Factor Construction",
         "",

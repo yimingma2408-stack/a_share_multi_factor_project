@@ -1,0 +1,38 @@
+project:
+  name: a_share_multi_factor_project
+  universe: hs300
+  start_date: "2016-01-01"
+  end_date: "2025-12-31"
+
+paths:
+  clean_daily_csv: data/processed/clean_daily_data.csv
+  dynamic_panel_parquet: data/processed/hs300_dynamic_panel_20160101_20251231_baostock.parquet
+  member_panel_parquet: data/processed/hs300_member_sample_20160101_20251231_baostock.parquet
+  reports_dir: reports
+  audit_dir: reports/completion_audit
+
+backtest:
+  rebalance: monthly
+  top_fraction: 0.20
+  min_listing_days: 120
+  one_way_cost_bps: [0, 5, 10, 20, 30, 50]
+
+factors:
+  price_volume:
+    momentum_windows: [20, 60, 120, 250]
+    momentum_skip_days: 20
+    volatility_windows: [20, 60, 120, 250]
+    turnover_windows: [20, 60]
+  value:
+    required_columns:
+      - market_cap
+      - book_equity
+      - net_profit
+      - revenue
+      - operating_cash_flow
+      - announcement_date
+  preprocessing:
+    winsorize_quantiles: [0.01, 0.99]
+    neutralize:
+      industry: true
+      log_size: true
