@@ -20,6 +20,14 @@ def main() -> None:
         action="store_true",
         help="Run the full research pipeline from cached raw data. Use this inside the quant environment.",
     )
+    parser.add_argument(
+        "--formal-eot",
+        choices=["reuse", "rerun", "skip"],
+        default="reuse",
+        help="Formal EOT-map policy in --full mode: validate/reuse cached final panel, recompute it, or skip explicitly.",
+    )
+    parser.add_argument("--formal-bootstrap", type=int, default=300, help="Bootstrap draws used only with --formal-eot rerun.")
+    parser.add_argument("--formal-references", type=int, default=100, help="Reference sample size used only with --formal-eot rerun.")
     args = parser.parse_args()
 
     run([sys.executable, "scripts/run_smoke_factor_report.py"])
@@ -31,14 +39,27 @@ def main() -> None:
         run([sys.executable, "scripts/run_value_neutralized_factor_research.py"])
         run([sys.executable, "scripts/run_quality_growth_risk_factor_research.py"])
         run([sys.executable, "scripts/run_final_factor_research_report.py"])
+        if args.formal_eot == "reuse":
+            # Reuse means validate the delivered 300-draw panel; it never silently substitutes legacy distance output.
+            run([sys.executable, "scripts/audit_task_711.py"])
+        elif args.formal_eot == "rerun":
+            run([
+                sys.executable,
+                "scripts/run_eot_map_lifecycle_test.py",
+                "--bootstrap", str(args.formal_bootstrap),
+                "--references", str(args.formal_references),
+            ])
+        else:
+            print("WARNING: formal EOT-map stage explicitly skipped; no formal lifecycle result is refreshed.")
+    run([sys.executable, "scripts/run_pit_coverage_audit.py"])
     run([sys.executable, "scripts/run_outline_completion_audit.py"])
     print()
     if args.full:
-        print("Full cached-data pipeline complete.")
+        print(f"Full cached-data pipeline complete (formal EOT policy: {args.formal_eot}).")
     else:
         print("Lightweight pipeline complete.")
         print("For the full cached-data pipeline, use the quant environment and run:")
-        print("  /opt/anaconda3/bin/conda run -n quant python scripts/run_full_research_pipeline.py --full")
+        print("  /opt/anaconda3/bin/conda run -n quant python scripts/run_full_research_pipeline.py --full --formal-eot reuse")
     print("See reports/completion_audit/outline_completion_audit.md for the current requirement-by-requirement state.")
 
 

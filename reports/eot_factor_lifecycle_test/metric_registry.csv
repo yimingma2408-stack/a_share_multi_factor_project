@@ -1,0 +1,9 @@
+metric_name,description,better_direction,primary_or_auxiliary,included_in_eot,scaling_method,diagnostic_weight,notes
+rank_ic,Weekly cross-sectional Rank IC,1,primary,True,base_median_mad,1.0,
+long_short_return,Weekly top-minus-bottom factor return,1,primary,True,base_median_mad,0.75,
+downside_return,"min(long_short_return, 0)",1,primary,True,base_median_mad,1.0,
+factor_turnover,Factor portfolio turnover,-1,auxiliary,False,base_median_mad,0.5,
+long_short_volatility,Long-short return volatility,-1,auxiliary,False,base_median_mad,0.5,
+drawdown,Factor NAV drawdown represented as a non-positive value,1,auxiliary,False,base_median_mad,0.5,
+coverage_ratio,Cross-sectional valid-observation ratio,1,auxiliary,False,base_median_mad,0.25,
+ic_breadth,Cross-sectional predictive breadth,1,auxiliary,False,base_median_mad,0.25,

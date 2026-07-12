@@ -1,0 +1,12 @@
+industry_coarse,tickers,rows,pit_safe_ratio
+consumer_discretionary,29,3401,0.0
+consumer_staples,29,3320,0.0
+financials,40,4338,0.0
+healthcare,40,4509,0.0
+industrials,96,10474,0.0
+information_technology,99,10418,0.0
+materials_energy,34,3992,0.0
+other,206,22581,0.0
+real_estate,18,2160,0.0
+telecom,9,900,0.0
+utilities,27,2923,0.0

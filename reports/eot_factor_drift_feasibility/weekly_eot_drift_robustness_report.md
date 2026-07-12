@@ -4,7 +4,7 @@
 
 Weekly EOT drift is mainly useful as a **primary monitoring signal with a conservative secondary allocation penalty**. It is not supported as a standalone main allocation signal.
 
-The selected robust candidate is `ICIR + weekly 4w_mean eta=1.5 clip_0.5`. It improves zero-cost Sharpe from 0.413 to 0.487 and Calmar from 0.173 to 0.233. At 20 bps its Sharpe is 0.425, compared with 0.351 for ICIR. These are feasibility results, not evidence of tradability.
+The selected robust candidate is `ICIR + weekly ewma_hl8 eta=1.0 clip_0.5`. It improves zero-cost Sharpe from 0.447 to 0.481 and Calmar from 0.222 to 0.257. At 20 bps its Sharpe is 0.415, compared with 0.382 for ICIR. These are feasibility results, not evidence of tradability.
 
 ## 2. Why Weekly Drift Needed Robustness Testing
 
@@ -14,32 +14,32 @@ The original monthly drift used only six observations in its recent window and w
 
 ## 3. Smoothing Results
 
-| signal_name   |      mean |      std |     median |      min |     max |   autocorrelation_1 |   autocorrelation_3 |   missing_ratio | notes                                                                          |
-|:--------------|----------:|---------:|-----------:|---------:|--------:|--------------------:|--------------------:|----------------:|:-------------------------------------------------------------------------------|
-| 4w_mean       | 0.0845696 | 1.19831  | -0.107914  | -3.53759 | 4.97467 |            0.825158 |            0.335793 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
-| 8w_mean       | 0.072418  | 1.14507  | -0.121289  | -2.9949  | 4.66018 |            0.876356 |            0.36836  |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
-| 12w_mean      | 0.06764   | 1.09616  | -0.101033  | -2.76666 | 4.47105 |            0.905017 |            0.415176 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
-| ewma_hl4      | 0.0729856 | 1.04103  | -0.0830576 | -2.3463  | 4.50713 |            0.905422 |            0.467746 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
-| ewma_hl8      | 0.0693755 | 0.881845 | -0.0409641 | -1.75324 | 3.86497 |            0.936912 |            0.593624 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
-| ewma_hl12     | 0.0655388 | 0.767554 | -0.0479647 | -1.43142 | 3.43798 |            0.950416 |            0.663589 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
+| signal_name   |         mean |      std |    median |      min |     max |   autocorrelation_1 |   autocorrelation_3 |   missing_ratio | notes                                                                          |
+|:--------------|-------------:|---------:|----------:|---------:|--------:|--------------------:|--------------------:|----------------:|:-------------------------------------------------------------------------------|
+| 4w_mean       |  0.0387967   | 1.09788  | -0.137436 | -2.21651 | 4.91842 |            0.797607 |            0.236798 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
+| 8w_mean       |  0.0168793   | 1.0267   | -0.135093 | -2.11956 | 4.31604 |            0.85397  |            0.266901 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
+| 12w_mean      |  0.00213966  | 0.957849 | -0.130771 | -2.09342 | 3.78054 |            0.888852 |            0.318994 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
+| ewma_hl4      |  0.0113737   | 0.907944 | -0.135736 | -1.89586 | 3.62528 |            0.884773 |            0.361183 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
+| ewma_hl8      | -0.000945118 | 0.73299  | -0.135695 | -1.56945 | 2.85467 |            0.920727 |            0.503856 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
+| ewma_hl12     | -0.00704134  | 0.618727 | -0.118451 | -1.28998 | 2.29768 |            0.937571 |            0.590284 |        0.373109 | Autocorrelations are averages of factor-level monthly signal autocorrelations. |
 
 `ewma_hl12` has the lowest pooled standard deviation with high persistence. The final model selection also considers portfolio behavior, so the smoothest statistical signal is not automatically selected.
 
 ## 4. Penalty Clipping Results
 
-The robust candidate uses `clip_0.5` with eta=1.5. Clipping limits factor-weight reactions to isolated drift spikes. Aggressive eta=2.0/no-clipping configurations were excluded from robust selection even when their in-sample metric was attractive.
+The robust candidate uses `clip_0.5` with eta=1.0. Clipping limits factor-weight reactions to isolated drift spikes. Aggressive eta=2.0/no-clipping configurations were excluded from robust selection even when their in-sample metric was attractive.
 
 ## 5. Backtest Grid Results
 
-| strategy_name                          |   annual_return |   annual_volatility |   sharpe |   max_drawdown |    calmar |   average_turnover |
-|:---------------------------------------|----------------:|--------------------:|---------:|---------------:|----------:|-------------------:|
-| Equal-factor                           |       0.0170611 |            0.171192 | 0.181322 |      -0.374096 | 0.0456062 |           0.450432 |
-| ICIR                                   |       0.0586011 |            0.173519 | 0.412704 |      -0.337782 | 0.173488  |           0.441503 |
-| ICIR + monthly EOT drift               |       0.0499465 |            0.164375 | 0.375776 |      -0.291846 | 0.17114   |           0.448908 |
-| ICIR + weekly 4w_mean eta=1.5 clip_0.5 |       0.0729019 |            0.17506  | 0.487165 |      -0.313138 | 0.232811  |           0.454863 |
-| ICIR + weekly EOT drift, previous      |       0.0688562 |            0.175071 | 0.465458 |      -0.301447 | 0.228419  |           0.4673   |
+| strategy_name                           |   annual_return |   annual_volatility |   sharpe |   max_drawdown |    calmar |   average_turnover |
+|:----------------------------------------|----------------:|--------------------:|---------:|---------------:|----------:|-------------------:|
+| Equal-factor                            |       0.0326968 |            0.162915 | 0.276191 |      -0.347212 | 0.0941698 |           0.455352 |
+| ICIR                                    |       0.0648558 |            0.173174 | 0.446924 |      -0.291746 | 0.222302  |           0.464685 |
+| ICIR + monthly EOT drift                |       0.0673477 |            0.169343 | 0.467091 |      -0.285687 | 0.23574   |           0.452384 |
+| ICIR + weekly EOT drift, previous       |       0.0741493 |            0.179606 | 0.485414 |      -0.305604 | 0.242632  |           0.485748 |
+| ICIR + weekly ewma_hl8 eta=1.0 clip_0.5 |       0.0719622 |            0.175382 | 0.481334 |      -0.280482 | 0.256566  |           0.479533 |
 
-The selected candidate has annual return 7.29%, volatility 17.51%, max drawdown -31.31%, and average monthly turnover 45.49%. Transaction costs are deducted as simple holdings-change turnover times one-way bps; return-drift-adjusted turnover, impact, and slippage are not modeled.
+The selected candidate has annual return 7.20%, volatility 17.54%, max drawdown -28.05%, and average monthly turnover 47.95%. Transaction costs are deducted as simple holdings-change turnover times one-way bps; return-drift-adjusted turnover, impact, and slippage are not modeled.
 
 ## 6. Monitoring Diagnostics
 

@@ -1,0 +1,7 @@
+factor_name,required_fields,available_or_not,start_date,end_date,coverage_ratio,missing_ratio,neutralized_or_not,notes
+reversal_1m,qfq_close,True,2016-02-29,2025-12-31,0.9916666666666667,0.008333333333333304,False,Negative past 20-trading-day return. Winsorized and z-scored; no industry/size neutralization.
+momentum_3m,qfq_close,True,2016-04-29,2025-12-31,0.975,0.025000000000000022,False,Past 60-trading-day return. Winsorized and z-scored; no industry/size neutralization.
+volatility_1m,return_1d/qfq_close,True,2016-01-29,2025-12-31,1.0,0.0,False,Negative 20-trading-day realized volatility. Winsorized and z-scored; no industry/size neutralization.
+turnover_1m,turnover,True,2016-01-29,2025-12-31,0.9955047465837134,0.004495253416286649,False,Negative 20-trading-day average turnover. Winsorized and z-scored; no industry/size neutralization.
+liquidity_1m,amount,True,2016-01-29,2025-12-31,0.9996102724966891,0.00038972750331089934,False,log1p of 20-trading-day average amount; not size-neutralized. Winsorized and z-scored; no industry/size neutralization.
+size,market_cap,False,,,0.0,1.0,False,Skipped because market capitalization is not available.

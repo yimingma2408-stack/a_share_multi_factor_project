@@ -8,25 +8,25 @@ This addendum extends the completed monthly EOT factor drift feasibility run to 
 
 | factor_name   |   mean_rank_ic |   std_rank_ic |       icir |   mean_long_short_return |   std_long_short_return |   t_stat_long_short |   positive_week_ratio | worst_week          | best_week           |   missing_weeks |   available_weeks |
 |:--------------|---------------:|--------------:|-----------:|-------------------------:|------------------------:|--------------------:|----------------------:|:--------------------|:--------------------|----------------:|------------------:|
-| liquidity_1m  |     -0.0153835 |      0.172904 | -0.0889713 |             -8.45485e-05 |               0.0212672 |          -0.0895157 |              0.493097 | 2021-08-27 00:00:00 | 2020-12-31 00:00:00 |               0 |               507 |
-| momentum_3m   |     -0.010805  |      0.212899 | -0.0507517 |              0.000776823 |               0.0271422 |           0.638692  |              0.544177 | 2021-02-19 00:00:00 | 2020-12-31 00:00:00 |               9 |               498 |
-| reversal_1m   |      0.0154444 |      0.196847 |  0.0784589 |             -0.00050242  |               0.0254176 |          -0.444639  |              0.480237 | 2024-01-26 00:00:00 | 2018-06-22 00:00:00 |               1 |               506 |
-| turnover_1m   |      0.0515035 |      0.217481 |  0.236819  |              0.00167442  |               0.0270273 |           1.39497   |              0.540434 | 2024-09-20 00:00:00 | 2024-01-26 00:00:00 |               0 |               507 |
-| volatility_1m |      0.039924  |      0.218683 |  0.182565  |              0.000324275 |               0.0274997 |           0.265515  |              0.499014 | 2018-03-23 00:00:00 | 2024-01-26 00:00:00 |               0 |               507 |
+| liquidity_1m  |     -0.0140483 |      0.171604 | -0.081865  |              0.000189278 |               0.0216482 |           0.196871  |              0.497041 | 2021-08-27 00:00:00 | 2020-12-31 00:00:00 |               0 |               507 |
+| momentum_3m   |     -0.0113142 |      0.213387 | -0.0530219 |              0.000705624 |               0.0275221 |           0.572144  |              0.532129 | 2024-09-20 00:00:00 | 2020-12-31 00:00:00 |               9 |               498 |
+| reversal_1m   |      0.0176102 |      0.195469 |  0.0900923 |             -0.000483018 |               0.0251907 |          -0.431319  |              0.482213 | 2024-01-26 00:00:00 | 2018-06-22 00:00:00 |               1 |               506 |
+| turnover_1m   |      0.0488794 |      0.215654 |  0.226656  |              0.00139329  |               0.0270044 |           1.16175   |              0.542406 | 2024-09-20 00:00:00 | 2024-01-26 00:00:00 |               0 |               507 |
+| volatility_1m |      0.0404206 |      0.220454 |  0.183352  |              5.94298e-05 |               0.027455  |           0.0487402 |              0.512821 | 2018-03-23 00:00:00 | 2021-02-19 00:00:00 |               0 |               507 |
 
 The strongest weekly Rank ICIR factors are turnover_1m, volatility_1m. The weakest/noisiest by ICIR are liquidity_1m, momentum_3m. The ordering is broadly consistent with the monthly run: turnover and low-volatility style signals remain more promising than simple momentum/liquidity in this HS300 MVP.
 
 ## 3. Weekly EOT Drift Diagnostics
 
-| factor_name   |   mean_eot_drift |   std_eot_drift |   max_eot_drift | max_drift_week      |   mean_shift_corr |   cov_shift_corr |   available_weeks | notes                                                 |
-|:--------------|-----------------:|----------------:|----------------:|:--------------------|------------------:|-----------------:|------------------:|:------------------------------------------------------|
-| liquidity_1m  |          1.67893 |        0.751632 |         3.73168 | 2021-05-07 00:00:00 |          0.232976 |         0.956511 |               325 | ImportError: POT is required for EOT barycentric maps |
-| momentum_3m   |          1.61801 |        1.02272  |         5.01902 | 2021-05-28 00:00:00 |          0.313857 |         0.990947 |               316 | ImportError: POT is required for EOT barycentric maps |
-| reversal_1m   |          1.33454 |        0.845193 |         3.91159 | 2021-04-30 00:00:00 |          0.679008 |         0.993272 |               324 | ImportError: POT is required for EOT barycentric maps |
-| turnover_1m   |          1.28624 |        0.964567 |         5.53164 | 2025-02-21 00:00:00 |          0.531666 |         0.953769 |               325 | ImportError: POT is required for EOT barycentric maps |
-| volatility_1m |          1.39249 |        1.08542  |         5.38713 | 2025-02-21 00:00:00 |          0.523446 |         0.984119 |               325 | ImportError: POT is required for EOT barycentric maps |
+| factor_name   |   mean_eot_drift |   std_eot_drift |   max_eot_drift | max_drift_week      |   mean_shift_corr |   cov_shift_corr |   available_weeks | notes   |
+|:--------------|-----------------:|----------------:|----------------:|:--------------------|------------------:|-----------------:|------------------:|:--------|
+| liquidity_1m  |         0.679661 |        0.278559 |         1.75008 | 2025-09-30 00:00:00 |          0.644235 |         0.632964 |               325 |         |
+| momentum_3m   |         0.614286 |        0.379157 |         1.92206 | 2021-08-13 00:00:00 |          0.688255 |         0.836689 |               316 |         |
+| reversal_1m   |         0.52014  |        0.315099 |         1.62759 | 2021-06-18 00:00:00 |          0.767911 |         0.916569 |               324 |         |
+| turnover_1m   |         0.601    |        0.513075 |         2.8947  | 2025-02-21 00:00:00 |          0.910338 |         0.598903 |               325 |         |
+| volatility_1m |         0.59341  |        0.407536 |         2.65817 | 2025-02-21 00:00:00 |          0.840551 |         0.731009 |               325 |         |
 
-Weekly drift generated a median 4.22x more drift observations per factor than monthly drift. The median weekly/monthly drift CV ratio is 1.141. The median change in EOT/mean-shift correlation is -0.222. POT may still emit occasional Sinkhorn convergence warnings, but the workflow completed and all weekly drift rows were written.
+Weekly drift generated a median 4.22x more drift observations per factor than monthly drift. The median weekly/monthly drift CV ratio is 0.976. The median change in EOT/mean-shift correlation is -0.113. POT may still emit occasional Sinkhorn convergence warnings, but the workflow completed and all weekly drift rows were written.
 
 ## 4. Monitoring Value
 
@@ -36,20 +36,20 @@ The relationship with subsequent factor returns is weak and factor-dependent:
 
 | factor_name   |   drift_corr_future_4w |   drift_corr_future_12w |   high_drift_future_4w |   normal_future_4w |   high_drift_future_12w |   normal_future_12w |
 |:--------------|-----------------------:|------------------------:|-----------------------:|-------------------:|------------------------:|--------------------:|
-| liquidity_1m  |             0.105643   |               0.234042  |             0.00769207 |       -0.00162616  |              0.00740485 |        -0.00156544  |
-| momentum_3m   |             0.00308668 |              -0.0717495 |             0.00420923 |       -8.97093e-05 |              0.00230605 |         7.60591e-05 |
-| reversal_1m   |             0.00202091 |              -0.0722191 |            -0.00194189 |       -0.00142449  |             -0.00476636 |        -0.000979621 |
-| turnover_1m   |             0.0802895  |               0.104691  |             0.00505667 |       -0.000497316 |              0.00478226 |        -0.00036966  |
-| volatility_1m |             0.103745   |               0.103103  |             0.00190762 |       -0.000219776 |              0.00056175 |         0.00015343  |
+| liquidity_1m  |              0.0785676 |               0.159885  |             0.00283338 |       -0.000323683 |             0.00187317  |        -0.000117154 |
+| momentum_3m   |             -0.0248274 |              -0.111533  |             0.00361545 |       -0.000351828 |             0.000165369 |         0.000101209 |
+| reversal_1m   |              0.0145332 |              -0.110544  |             0.00105166 |       -0.00163439  |            -0.00231988  |        -0.0011829   |
+| turnover_1m   |              0.0383983 |               0.062949  |             0.00135059 |        0.000161593 |             0.00206172  |         0.000113498 |
+| volatility_1m |              0.017339  |               0.0667038 |            -0.00118035 |       -0.000143414 |            -9.47608e-05 |        -0.000340139 |
 
 ## 5. Optional Backtest Result
 
-| strategy                                      |   annual_return |   annual_volatility |   sharpe |   max_drawdown |    calmar |   monthly_win_rate |   turnover | start_date          | end_date            | notes                                                                                                                   |
-|:----------------------------------------------|----------------:|--------------------:|---------:|---------------:|----------:|-------------------:|-----------:|:--------------------|:--------------------|:------------------------------------------------------------------------------------------------------------------------|
-| Equal-factor multifactor                      |       0.02005   |            0.168072 | 0.199209 |      -0.374096 | 0.0535959 |           0.5      |   0.449605 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Monthly rebalance; weekly EOT signal is average of last 4 weekly z-scores before month-end; no transaction costs.       |
-| ICIR-weighted multifactor                     |       0.056928  |            0.170232 | 0.408173 |      -0.337782 | 0.168535  |           0.539474 |   0.436727 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Monthly rebalance; weekly EOT signal is average of last 4 weekly z-scores before month-end; no transaction costs.       |
-| ICIR + weekly EOT drift weighted multifactor  |       0.0667608 |            0.171761 | 0.459768 |      -0.301447 | 0.221468  |           0.552632 |   0.461505 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Monthly rebalance; weekly EOT signal is average of last 4 weekly z-scores before month-end; no transaction costs.       |
-| ICIR + monthly EOT drift weighted multifactor |       0.0486268 |            0.161275 | 0.372214 |      -0.291846 | 0.166618  |           0.539474 |   0.443071 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Original monthly EOT strategy, metrics aligned to weekly-drift backtest start; turnover retained from full monthly run. |
+| strategy                                      |   annual_return |   annual_volatility |   sharpe |   max_drawdown |   calmar |   monthly_win_rate |   turnover | start_date          | end_date            | notes                                                                                                                   |
+|:----------------------------------------------|----------------:|--------------------:|---------:|---------------:|---------:|-------------------:|-----------:|:--------------------|:--------------------|:------------------------------------------------------------------------------------------------------------------------|
+| Equal-factor multifactor                      |       0.0349142 |            0.160032 | 0.291867 |      -0.347212 | 0.100556 |           0.5      |   0.454483 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Monthly rebalance; weekly EOT signal is average of last 4 weekly z-scores before month-end; no transaction costs.       |
+| ICIR-weighted multifactor                     |       0.0635963 |            0.169993 | 0.445251 |      -0.291746 | 0.217985 |           0.539474 |   0.459062 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Monthly rebalance; weekly EOT signal is average of last 4 weekly z-scores before month-end; no transaction costs.       |
+| ICIR + weekly EOT drift weighted multifactor  |       0.0725108 |            0.176292 | 0.48267  |      -0.305604 | 0.237271 |           0.539474 |   0.479293 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Monthly rebalance; weekly EOT signal is average of last 4 weekly z-scores before month-end; no transaction costs.       |
+| ICIR + monthly EOT drift weighted multifactor |       0.0659868 |            0.166248 | 0.465121 |      -0.285687 | 0.230976 |           0.552632 |   0.445766 | 2019-08-30 00:00:00 | 2025-11-28 00:00:00 | Original monthly EOT strategy, metrics aligned to weekly-drift backtest start; turnover retained from full monthly run. |
 
 The weekly-drift backtest keeps monthly rebalancing and uses the average of the last 4 weekly EOT z-scores as the factor penalty signal. It should be read as an incremental sanity check rather than a final trading result.
 

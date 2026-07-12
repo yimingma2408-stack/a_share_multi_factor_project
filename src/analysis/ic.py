@@ -3,6 +3,13 @@ from __future__ import annotations
 import pandas as pd
 
 
+def _safe_corr(left: pd.Series, right: pd.Series, method: str) -> float:
+    """Return NaN for mathematically undefined correlations without warnings."""
+    if left.nunique(dropna=True) < 2 or right.nunique(dropna=True) < 2:
+        return float("nan")
+    return float(left.corr(right, method=method))
+
+
 def compute_rank_ic(
     df: pd.DataFrame,
     factor_cols: list[str],
@@ -20,8 +27,8 @@ def compute_rank_ic(
                 {
                     "date": date,
                     "factor_name": factor,
-                    "ic": valid[factor].corr(valid[forward_return_col], method="pearson"),
-                    "rank_ic": valid[factor].corr(valid[forward_return_col], method="spearman"),
+                    "ic": _safe_corr(valid[factor], valid[forward_return_col], method="pearson"),
+                    "rank_ic": _safe_corr(valid[factor], valid[forward_return_col], method="spearman"),
                     "n_obs": len(valid),
                 }
             )
@@ -43,4 +50,3 @@ def summarize_ic(ic: pd.DataFrame) -> pd.DataFrame:
             }
         )
     return pd.DataFrame(rows)
-

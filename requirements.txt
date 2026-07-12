@@ -1,12 +1,3 @@
-numpy
-pandas
-scipy
-scikit-learn
-matplotlib
-seaborn
-tqdm
-joblib
-akshare
-yfinance
-jupyterlab
-ipykernel
+# Locked runtime and research environment used for the delivered formal EOT-map results.
+# Install with: python -m pip install -r requirements.txt
+-e .[all]

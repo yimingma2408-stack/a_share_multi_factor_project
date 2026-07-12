@@ -1,0 +1,11 @@
+factor_name,factor_family,cluster_id,representative_factor,within_cluster_rank,redundancy_score,selection_status,notes
+reversal_1m,price_volume,2,reversal_1m,1,1.0,representative,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+momentum_1m,price_volume,2,reversal_1m,2,1.0,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+momentum_3m,price_volume,3,momentum_12m,3,0.7405914096760284,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+momentum_6m,price_volume,3,momentum_12m,2,0.7405914096760284,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+momentum_12m,price_volume,3,momentum_12m,1,0.7028900470378101,representative,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+volatility_1m,risk,1,turnover_1m,4,0.8893419374195026,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+volatility_3m,risk,1,turnover_1m,3,0.8893419374195026,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+turnover_1m,price_volume,1,turnover_1m,1,0.9559019648764808,representative,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+turnover_3m,price_volume,1,turnover_1m,2,0.9559019648764808,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.
+liquidity_1m,price_volume,1,turnover_1m,5,0.8780587644928444,retained_with_cluster_cap,Full-sample cluster is descriptive only; backtest representatives are recomputed from prior history.

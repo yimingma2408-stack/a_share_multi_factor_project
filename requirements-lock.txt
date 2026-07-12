@@ -1,0 +1,14 @@
+# Exact dependency manifest captured from the project quant environment on 2026-07-12.
+setuptools==82.0.1
+numpy==2.4.6
+pandas==3.0.3
+scipy==1.17.1
+scikit-learn==1.8.0
+POT==0.9.7
+matplotlib==3.10.9
+seaborn==0.13.2
+fastparquet==2026.3.0
+akshare==1.18.60
+baostock==0.9.1
+efinance==0.5.8
+pytest==9.0.3

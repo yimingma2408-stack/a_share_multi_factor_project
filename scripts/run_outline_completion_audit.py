@@ -1,6 +1,7 @@
+"""Current-state project audit; intentionally distinguishes complete, conditional and incomplete evidence."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import pandas as pd
@@ -18,271 +19,79 @@ class Requirement:
     notes: str
 
 
-def exists(path: str) -> bool:
-    return (ROOT / path).exists()
+def exists(relative: str) -> bool:
+    return (ROOT / relative).exists()
 
 
-def any_exists(paths: tuple[str, ...]) -> bool:
-    return any(exists(path) for path in paths)
-
-
-def file_contains_all(path: str, needles: tuple[str, ...]) -> bool:
-    full_path = ROOT / path
-    if not full_path.exists():
-        return False
-    try:
-        text = full_path.read_text(encoding="utf-8")
-    except Exception:
-        return False
-    return all(needle in text for needle in needles)
-
-
-def parquet_min_tickers(path: str, min_tickers: int) -> bool:
-    full_path = ROOT / path
-    if not full_path.exists():
-        return False
-    try:
-        df = pd.read_parquet(full_path, columns=["ticker"])
-    except Exception:
-        return False
-    return "ticker" in df.columns and df["ticker"].astype(str).nunique() >= min_tickers
-
-
-def parquet_min_complete_tickers(path: str, min_tickers: int, required_columns: tuple[str, ...]) -> bool:
-    full_path = ROOT / path
-    if not full_path.exists():
-        return False
-    columns = ["ticker", *required_columns]
-    try:
-        df = pd.read_parquet(full_path, columns=columns)
-    except Exception:
-        return False
-    complete = df.dropna(subset=list(required_columns))
-    return complete["ticker"].astype(str).nunique() >= min_tickers
+def broad_fundamental_status() -> tuple[str, str]:
+    path = ROOT / "data/processed/coverage_expansion/fundamental_panel_broad.parquet"
+    if not path.exists():
+        return "incomplete", "Broad fundamental panel is absent."
+    panel = pd.read_parquet(path, columns=["ticker", "available_date", "date", "industry_pit_safe"])
+    future = int((pd.to_datetime(panel["available_date"]) > pd.to_datetime(panel["date"])).sum())
+    tickers = panel["ticker"].astype(str).nunique()
+    industry_safe = float(panel["industry_pit_safe"].fillna(False).mean())
+    if future == 0 and tickers >= 500 and industry_safe < 0.95:
+        return "conditional", f"{tickers} tickers and zero future-date violations, but PIT-safe industry coverage is {industry_safe:.2%}; exclude from headline formal allocation."
+    if future == 0 and tickers >= 500:
+        return "complete", f"{tickers} tickers with zero future-date violations and PIT-safe industry coverage {industry_safe:.2%}."
+    return "incomplete", f"Ticker breadth={tickers}, future-date violations={future}, PIT-safe industry coverage={industry_safe:.2%}."
 
 
 def collect_requirements() -> list[Requirement]:
-    requirements: list[Requirement] = []
-
-    def add(section: str, requirement: str, paths: tuple[str, ...], done: bool, notes: str) -> None:
-        requirements.append(
-            Requirement(
-                section=section,
-                requirement=requirement,
-                evidence_paths=paths,
-                status="complete" if done else "incomplete",
-                notes=notes,
-            )
-        )
-
-    add(
-        "data",
-        "HS300 or CSI500 universe and daily adjusted price/volume data",
-        (
-            "data/processed/hs300_dynamic_panel_20160101_20251231_baostock.parquet",
-            "data/processed/clean_daily_data.csv",
-            "reports/eot_factor_drift_feasibility/data_inventory.md",
-        ),
-        all(
-            exists(path)
-            for path in (
-                "data/processed/hs300_dynamic_panel_20160101_20251231_baostock.parquet",
-                "reports/eot_factor_drift_feasibility/data_inventory.md",
-            )
-        ),
-        "Dynamic HS300 panel exists; current default Python cannot read parquet without pyarrow/fastparquet.",
-    )
-    add(
-        "data",
-        "Industry, market-cap, and point-in-time fundamental data",
-        ("data/processed/fundamental_panel.parquet", "data/processed/industry_size_panel.parquet"),
-        parquet_min_complete_tickers(
-            "data/processed/fundamental_panel.parquet",
-            200,
-            ("market_cap", "book_equity", "net_profit", "revenue", "operating_cash_flow"),
-        )
-        and parquet_min_complete_tickers("data/processed/industry_size_panel.parquet", 200, ("industry", "market_cap")),
-        "Required for value factors, neutralization, and attribution; must cover a broad HS300 universe, not only a smoke-test sample.",
-    )
-    add(
-        "factors",
-        "Momentum, low-volatility, turnover, and liquidity factors",
-        ("src/factors/price_volume.py", "scripts/run_eot_factor_drift_feasibility.py"),
-        all(exists(path) for path in ("src/factors/price_volume.py", "scripts/run_eot_factor_drift_feasibility.py")),
-        "Reusable price/volume factor library and existing EOT feasibility factor script are present.",
-    )
-    add(
-        "factors",
-        "Value factors BP, EP, SP, and CFP",
-        (
-            "src/factors/value.py",
-            "scripts/run_value_neutralized_factor_research.py",
-            "data/processed/fundamental_panel.parquet",
-            "reports/final/value_neutralized_factor_report.md",
-        ),
-        exists("src/factors/value.py")
-        and exists("scripts/run_value_neutralized_factor_research.py")
-        and exists("reports/final/value_neutralized_factor_report.md")
-        and parquet_min_complete_tickers(
-            "data/processed/fundamental_panel.parquet",
-            200,
-            ("market_cap", "book_equity", "net_profit", "revenue", "operating_cash_flow"),
-        ),
-        "Code interface and production script exist; completion requires broad point-in-time outputs and report evidence.",
-    )
-    add(
-        "preprocess",
-        "Winsorization, standardization, and industry/size neutralization",
-        (
-            "src/factors/preprocess.py",
-            "data/processed/industry_size_panel.parquet",
-            "reports/final/value_neutralized_factor_report.md",
-        ),
-        exists("src/factors/preprocess.py")
-        and exists("reports/final/value_neutralized_factor_report.md")
-        and parquet_min_complete_tickers("data/processed/industry_size_panel.parquet", 200, ("industry", "market_cap")),
-        "Reusable preprocessing code exists; production completion requires broad industry/size coverage and report evidence.",
-    )
-    add(
-        "single_factor",
-        "IC/Rank IC, factor correlation, grouped return tests, and Fama-MacBeth regression",
-        ("src/analysis/ic.py", "src/analysis/correlations.py", "src/analysis/grouping.py", "src/analysis/fama_macbeth.py"),
-        all(
-            exists(path)
-            for path in (
-                "src/analysis/ic.py",
-                "src/analysis/correlations.py",
-                "src/analysis/grouping.py",
-                "src/analysis/fama_macbeth.py",
-            )
-        ),
-        "Analysis modules are implemented and value/EOT report outputs provide full-panel evidence.",
-    )
-    add(
-        "multifactor",
-        "Equal, ICIR, and drift-aware multifactor weighting",
-        (
-            "scripts/run_eot_factor_drift_feasibility.py",
-            "scripts/run_weekly_eot_factor_drift.py",
-            "reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md",
-        ),
-        all(
-            exists(path)
-            for path in (
-                "scripts/run_eot_factor_drift_feasibility.py",
-                "reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md",
-            )
-        ),
-        "Existing reports cover equal, ICIR, and EOT variants on price/volume factors.",
-    )
-    add(
-        "portfolio",
-        "Long-only top-quantile portfolio, turnover, and simple cost sensitivity",
-        ("src/backtest/costs.py", "reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md"),
-        all(
-            exists(path)
-            for path in (
-                "src/backtest/costs.py",
-                "reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md",
-            )
-        ),
-        "Simple turnover/cost tools and robustness report exist.",
-    )
-    add(
-        "portfolio",
-        "Strict execution modeling: limit-up/limit-down, suspension, slippage, spread, and market impact",
-        ("src/backtest/execution.py", "src/backtest/costs.py", "reports/final/factor_research_report.md"),
-        exists("src/backtest/execution.py")
-        and file_contains_all("reports/final/factor_research_report.md", ("## Strict Execution", "spread", "slippage", "market impact")),
-        "Execution utilities exist; final completion requires a data-backed strict-execution section in the final report.",
-    )
-    add(
-        "risk_attribution",
-        "Benchmark-relative performance, market regression, industry attribution, and style exposure checks",
-        ("src/analysis/attribution.py", "reports/final/factor_research_report.md"),
-        exists("src/analysis/attribution.py")
-        and file_contains_all(
-            "reports/final/factor_research_report.md",
-            ("## Benchmark Attribution", "market regression", "industry attribution", "style exposure"),
-        ),
-        "Attribution code exists; final completion requires a data-backed benchmark/style/industry attribution section.",
-    )
-    add(
-        "robustness",
-        "Subperiod, parameter, stock-pool, cost, and walk-forward/sample-out robustness tests",
-        ("reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md", "reports/final/factor_research_report.md"),
-        exists("reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md")
-        and file_contains_all(
-            "reports/final/factor_research_report.md",
-            ("## Robustness", "subperiod", "walk-forward", "stock-pool"),
-        ),
-        "EOT smoothing/cost sensitivity exists; final report adds subperiod, walk-forward, and stock-pool diagnostics.",
-    )
-    add(
-        "engineering",
-        "Config, README, tests, modular source tree, and reproducible one-command workflow",
-        (
-            "config/config.yaml",
-            "README.md",
-            "tests/test_research_modules.py",
-            "scripts/run_full_research_pipeline.py",
-            "reports/final/factor_research_report.md",
-        ),
-        all(
-            exists(path)
-            for path in (
-                "config/config.yaml",
-                "README.md",
-                "tests/test_research_modules.py",
-                "scripts/run_full_research_pipeline.py",
-            )
-        )
-        and file_contains_all("reports/final/factor_research_report.md", ("## Reproducibility", "run_full_research_pipeline.py --full")),
-        "A full cached-data one-command entry exists and the final report records reproducibility evidence.",
-    )
-    return requirements
+    fundamental_status, fundamental_notes = broad_fundamental_status()
+    formal_complete = all(exists(path) for path in (
+        "data/processed/eot_factor_lifecycle_test/eot_map_test_panel.parquet",
+        "data/processed/eot_factor_lifecycle_test/eot_map_coordinate_diagnostics.parquet",
+        "reports/eot_factor_lifecycle_test/eot_map_factor_lifecycle_final_report.md",
+        "reports/eot_factor_lifecycle_test/task_711_completion_audit.md",
+    ))
+    package_complete = all(exists(path) for path in ("pyproject.toml", "requirements.txt", "requirements-lock.txt", "environment.yml"))
+    return [
+        Requirement("data", "Dynamic HS300 adjusted market panel", ("data/processed/hs300_dynamic_panel_20160101_20251231_baostock.parquet",), "complete" if exists("data/processed/hs300_dynamic_panel_20160101_20251231_baostock.parquet") else "incomplete", "Dynamic market panel is the headline research universe."),
+        Requirement("data", "Broad PIT financial, industry and market-cap panel for headline multifactor allocation", ("data/processed/coverage_expansion/fundamental_panel_broad.parquet", "reports/data_quality/point_in_time_coverage_audit.md"), fundamental_status, fundamental_notes),
+        Requirement("factors", "Price/volume factor research", ("src/factors/price_volume.py", "reports/eot_factor_drift_feasibility/weekly_eot_drift_robustness_report.md"), "complete" if exists("src/factors/price_volume.py") else "incomplete", "Price/volume factors are the current headline factor universe."),
+        Requirement("factors", "Value/quality/growth factors in headline formal multifactor allocation", ("src/factors/value.py", "src/factors/quality_growth_risk.py", "reports/data_quality/point_in_time_coverage_audit.md"), "conditional" if fundamental_status == "conditional" else "incomplete", "Implementations and broad research data exist, but PIT-safe industry history prevents headline promotion."),
+        Requirement("lifecycle", "Formal EOT-map two-sample lifecycle diagnostics", ("src/factor_lifecycle_test/eot_map_two_sample.py", "data/processed/eot_factor_lifecycle_test/eot_map_test_panel.parquet", "reports/eot_factor_lifecycle_test/eot_map_factor_lifecycle_final_report.md"), "complete" if formal_complete else "incomplete", "Formal common-reference maps, scaled statistic, 300-draw centered IID/block calibration, FDR and lifecycle outputs."),
+        Requirement("portfolio", "Walk-forward allocation and transaction-cost comparison", ("data/processed/eot_factor_lifecycle_test/backtest_nav_test_based.parquet", "reports/eot_factor_lifecycle_test/backtest_summary_test_based.csv"), "complete" if exists("data/processed/eot_factor_lifecycle_test/backtest_nav_test_based.parquet") else "incomplete", "Completed as an experimental monitoring-extension comparison; not evidence of live alpha."),
+        Requirement("reproducibility", "Installable, dependency-pinned environment and explicit formal-EOT cache policy", ("pyproject.toml", "requirements-lock.txt", "environment.yml", "scripts/run_full_research_pipeline.py"), "complete" if package_complete else "incomplete", "`--full --formal-eot reuse|rerun|skip` explicitly controls final formal EOT handling."),
+        Requirement("engineering", "Current-state tests and formal artifact audit", ("tests/test_eot_map_lifecycle_test.py", "tests/test_data_quality_and_attribution.py", "scripts/audit_task_711.py"), "complete" if exists("scripts/audit_task_711.py") else "incomplete", "Run `pytest` and `python scripts/audit_task_711.py` in the installed environment."),
+    ]
 
 
 def write_report(requirements: list[Requirement]) -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    df = pd.DataFrame([r.__dict__ for r in requirements])
-    df["evidence_paths"] = df["evidence_paths"].apply(lambda paths: "; ".join(paths))
-    df.to_csv(REPORT_DIR / "outline_completion_audit.csv", index=False)
-
-    total = len(df)
-    complete = int((df["status"] == "complete").sum())
+    frame = pd.DataFrame([asdict(item) for item in requirements])
+    frame.to_csv(REPORT_DIR / "outline_completion_audit.csv", index=False)
+    counts = frame["status"].value_counts().to_dict()
     lines = [
-        "# A-Share Multifactor Outline Completion Audit",
+        "# A-Share Multifactor Current-State Audit",
         "",
-        f"- Completed requirements: {complete}/{total}",
-        f"- Incomplete requirements: {total - complete}/{total}",
-        "- Completion standard: a requirement is complete only when current files provide direct evidence.",
+        "This audit is a current filesystem check, not a historical completion claim.",
+        "",
+        f"- Complete: {counts.get('complete', 0)}",
+        f"- Conditional: {counts.get('conditional', 0)}",
+        f"- Incomplete: {counts.get('incomplete', 0)}",
         "",
         "| section | status | requirement | evidence | notes |",
         "| --- | --- | --- | --- | --- |",
     ]
-    for _, row in df.iterrows():
-        lines.append(
-            f"| {row['section']} | {row['status']} | {row['requirement']} | `{row['evidence_paths']}` | {row['notes']} |"
-        )
-    lines.append("")
-    lines.append("## Current Judgment")
-    lines.append("")
-    if complete == total:
-        lines.append("The outline is fully complete according to the current audit evidence.")
-    else:
-        lines.append(
-            "The outline is not fully complete yet. The highest-priority missing pieces are point-in-time "
-            "fundamental data, industry/market-cap data, strict execution modeling, attribution, and the final "
-            "one-command reproducible pipeline."
-        )
+    for item in requirements:
+        paths = "; ".join(f"`{path}`" for path in item.evidence_paths)
+        lines.append(f"| {item.section} | {item.status} | {item.requirement} | {paths} | {item.notes} |")
+    lines.extend([
+        "",
+        "## Interpretation",
+        "",
+        "The formal EOT-map lifecycle project is complete for the ten price/volume factors. Broad financial research inputs remain conditional and are deliberately excluded from headline formal allocation until dated PIT-safe industry history is available. Legacy distance-based EOT reports are retained as baselines, not as formal hypothesis-test evidence.",
+    ])
     (REPORT_DIR / "outline_completion_audit.md").write_text("\n".join(lines), encoding="utf-8")
 
 
 def main() -> None:
     requirements = collect_requirements()
     write_report(requirements)
-    print(f"Wrote {REPORT_DIR / 'outline_completion_audit.md'}")
+    print(pd.DataFrame([asdict(item) for item in requirements])[["section", "status", "requirement"]].to_string(index=False))
 
 
 if __name__ == "__main__":

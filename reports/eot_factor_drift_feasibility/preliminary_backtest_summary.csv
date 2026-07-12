@@ -1,0 +1,4 @@
+strategy,annual_return,annual_volatility,sharpe,max_drawdown,calmar,monthly_win_rate,turnover,start_date,end_date,notes
+Equal-factor multifactor,0.03356190905212464,0.15901888071627193,0.28450684583524566,-0.3472116737318188,0.09666123460482312,0.4935064935064935,0.4544243891701519,2019-07-31,2025-11-28,Stock-level top-20% long-only backtest; no transaction costs; trade_status/ST filters only.
+ICIR-weighted multifactor,0.055381368886187055,0.1700182224160165,0.399408008503067,-0.29174630699632187,0.18982714625033886,0.5324675324675324,0.4574290116662998,2019-07-31,2025-11-28,Stock-level top-20% long-only backtest; no transaction costs; trade_status/ST filters only.
+ICIR + EOT drift weighted multifactor,0.05772265866939752,0.16632967338131313,0.4179719204105693,-0.28568668144146114,0.20204882628112725,0.5454545454545454,0.4457663805121434,2019-07-31,2025-11-28,Stock-level top-20% long-only backtest; no transaction costs; trade_status/ST filters only.

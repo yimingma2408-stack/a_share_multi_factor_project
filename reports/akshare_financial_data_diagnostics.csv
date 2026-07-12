@@ -1,0 +1,6 @@
+ticker,error_message,balance_sheet_status,balance_sheet_source,n_balance_rows,profit_sheet_status,profit_sheet_source,n_profit_rows,cash_flow_sheet_status,cash_flow_sheet_source,n_cashflow_rows
+000001,,cached,eastmoney,118,cached,eastmoney,121,cached,eastmoney,102
+000002,,cached,eastmoney,115,cached,eastmoney,116,cached,eastmoney,102
+000008,,cached,eastmoney,117,cached,eastmoney,117,cached,eastmoney,102
+000009,,cached,eastmoney,117,cached,eastmoney,117,cached,eastmoney,102
+000027,,cached,eastmoney,115,cached,eastmoney,114,cached,eastmoney,103

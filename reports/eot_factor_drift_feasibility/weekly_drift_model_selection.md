@@ -7,22 +7,22 @@
 ## Selection
 
 - Most statistically smooth signal by low standard deviation and persistence: `ewma_hl12`.
-- Selected robust allocation candidate: `ICIR + weekly 4w_mean eta=1.5 clip_0.5`.
-- Zero-cost Sharpe 0.487 versus ICIR 0.413; Calmar 0.233 versus 0.173.
-- At 20 bps, candidate Sharpe 0.425 versus ICIR 0.351.
-- Candidate max drawdown -31.31%; average monthly turnover 45.49%.
+- Selected robust allocation candidate: `ICIR + weekly ewma_hl8 eta=1.0 clip_0.5`.
+- Zero-cost Sharpe 0.481 versus ICIR 0.447; Calmar 0.257 versus 0.222.
+- At 20 bps, candidate Sharpe 0.415 versus ICIR 0.382.
+- Candidate max drawdown -28.05%; average monthly turnover 47.95%.
 
 Robust selection requires eta <= 1.5 and a penalty floor of at least 0.5. Clipping is useful because it bounds the response to a drift spike. The selected scheme is preferred for its joint Sharpe, Calmar, drawdown, turnover, cost resilience, and non-extreme parameterization, not because it has the single highest raw return.
 
 ## Baseline Comparison
 
-| strategy_name                          |   annual_return |   annual_volatility |   sharpe |   max_drawdown |    calmar |   average_turnover |
-|:---------------------------------------|----------------:|--------------------:|---------:|---------------:|----------:|-------------------:|
-| Equal-factor                           |       0.0170611 |            0.171192 | 0.181322 |      -0.374096 | 0.0456062 |           0.450432 |
-| ICIR                                   |       0.0586011 |            0.173519 | 0.412704 |      -0.337782 | 0.173488  |           0.441503 |
-| ICIR + monthly EOT drift               |       0.0499465 |            0.164375 | 0.375776 |      -0.291846 | 0.17114   |           0.448908 |
-| ICIR + weekly 4w_mean eta=1.5 clip_0.5 |       0.0729019 |            0.17506  | 0.487165 |      -0.313138 | 0.232811  |           0.454863 |
-| ICIR + weekly EOT drift, previous      |       0.0688562 |            0.175071 | 0.465458 |      -0.301447 | 0.228419  |           0.4673   |
+| strategy_name                           |   annual_return |   annual_volatility |   sharpe |   max_drawdown |    calmar |   average_turnover |
+|:----------------------------------------|----------------:|--------------------:|---------:|---------------:|----------:|-------------------:|
+| Equal-factor                            |       0.0326968 |            0.162915 | 0.276191 |      -0.347212 | 0.0941698 |           0.455352 |
+| ICIR                                    |       0.0648558 |            0.173174 | 0.446924 |      -0.291746 | 0.222302  |           0.464685 |
+| ICIR + monthly EOT drift                |       0.0673477 |            0.169343 | 0.467091 |      -0.285687 | 0.23574   |           0.452384 |
+| ICIR + weekly EOT drift, previous       |       0.0741493 |            0.179606 | 0.485414 |      -0.305604 | 0.242632  |           0.485748 |
+| ICIR + weekly ewma_hl8 eta=1.0 clip_0.5 |       0.0719622 |            0.175382 | 0.481334 |      -0.280482 | 0.256566  |           0.479533 |
 
 ## Resume Judgment
 

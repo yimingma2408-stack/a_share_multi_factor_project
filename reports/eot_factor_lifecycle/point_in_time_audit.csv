@@ -1,0 +1,32 @@
+factor_name,point_in_time_safe,announcement_date_available,lag_rule,future_information_risk,action,notes
+reversal_1m,True,False,20.0 trading days ending at t,low,eligible lifecycle input,
+momentum_1m,True,False,20.0 trading days ending at t,low,eligible lifecycle input,
+momentum_3m,True,False,60.0 trading days ending at t,low,eligible lifecycle input,
+momentum_6m,True,False,120.0 trading days ending at t,low,eligible lifecycle input,
+momentum_12m,True,False,250.0 trading days ending at t,low,eligible lifecycle input,
+volatility_1m,True,False,20.0 trading days ending at t,low,eligible lifecycle input,
+volatility_3m,True,False,60.0 trading days ending at t,low,eligible lifecycle input,
+turnover_1m,True,False,20.0 trading days ending at t,low,eligible lifecycle input,
+turnover_3m,True,False,60.0 trading days ending at t,low,eligible lifecycle input,
+liquidity_1m,True,False,20.0 trading days ending at t,low,eligible lifecycle input,
+mom_60_20d,True,False,60.0 trading days ending at t,low,watch/redundancy control,Implemented library variant; excluded from lifecycle to limit near-duplicate horizons.
+mom_120_20d,True,False,120.0 trading days ending at t,low,watch/redundancy control,Implemented library variant; excluded from lifecycle to limit near-duplicate horizons.
+mom_250_20d,True,False,250.0 trading days ending at t,low,watch/redundancy control,Implemented library variant; excluded from lifecycle to limit near-duplicate horizons.
+lowvol_120d,True,False,120.0 trading days ending at t,low,watch/redundancy control,Implemented; watch-only because lifecycle set already contains two volatility horizons.
+lowvol_250d,True,False,250.0 trading days ending at t,low,watch/redundancy control,Implemented; watch-only because lifecycle set already contains two volatility horizons.
+lowturn_20d,True,False,20.0 trading days ending at t,low,watch/redundancy control,Monotonic duplicate of turnover_1m under rank-based evaluation.
+lowturn_60d,True,False,60.0 trading days ending at t,low,watch/redundancy control,Monotonic duplicate of turnover_3m under rank-based evaluation.
+bp,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,PIT framework exists; current financial panel covers only five tickers.
+ep,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,PIT framework exists; current financial panel covers only five tickers.
+sp,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,PIT framework exists; current financial panel covers only five tickers.
+cfp,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,PIT framework exists; current financial panel covers only five tickers.
+value_composite_raw,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,Composite of four value yields; current coverage is insufficient.
+size,True,False,rolling window ending at t,low/medium: benchmark or exposure role needs validation,watch only,Market cap is available but size is reserved as a neutralization exposure in this run.
+roe,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,Current financial panel covers only five tickers.
+gross_profitability,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,Current financial panel covers only five tickers.
+ocf_to_assets,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,Current financial panel covers only five tickers.
+revenue_growth,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,Current financial panel covers only five tickers; revision history is unavailable.
+earnings_growth,True,True,announcement/available date as-of,medium: no revision history; five-ticker coverage,reject from formal backtest,Current financial panel covers only five tickers; revision history is unavailable.
+rolling_beta,True,False,rolling window ending at t,low/medium: benchmark or exposure role needs validation,watch only,Implemented but not included in the lifecycle run because the equal-weight proxy is not an investable benchmark.
+idiosyncratic_volatility,True,False,rolling window ending at t,low/medium: benchmark or exposure role needs validation,watch only,Implemented; watch-only pending benchmark and exposure validation.
+downside_beta,True,False,rolling window ending at t,low/medium: benchmark or exposure role needs validation,watch only,Implemented; watch-only pending benchmark and exposure validation.

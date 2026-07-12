@@ -8,6 +8,8 @@ paths:
   clean_daily_csv: data/processed/clean_daily_data.csv
   dynamic_panel_parquet: data/processed/hs300_dynamic_panel_20160101_20251231_baostock.parquet
   member_panel_parquet: data/processed/hs300_member_sample_20160101_20251231_baostock.parquet
+  fundamental_panel_path: data/processed/fundamental_panel_akshare_with_market_cap.parquet
+  market_cap_panel_path: data/processed/market_cap_panel.parquet
   reports_dir: reports
   audit_dir: reports/completion_audit
 
@@ -16,6 +18,19 @@ backtest:
   top_fraction: 0.20
   min_listing_days: 120
   one_way_cost_bps: [0, 5, 10, 20, 30, 50]
+
+eot_map_lifecycle_test:
+  base_window_weeks: 156
+  recent_window_weeks: 26
+  n_reference: 100
+  epsilon_scale: 0.2
+  alpha: 0.05
+  fdr_level: 0.10
+  bootstrap_final: 300
+  bootstrap_methods: [iid_multiplier, block_multiplier]
+  block_length_weeks: 8
+  map_difference_direction: recent_minus_base
+  random_seed: 42
 
 factors:
   price_volume:

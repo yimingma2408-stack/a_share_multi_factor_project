@@ -1,0 +1,32 @@
+factor_name,factor_family,status,reason
+reversal_1m,price_volume,eligible,sufficient market coverage and history
+momentum_1m,price_volume,eligible,sufficient market coverage and history
+momentum_3m,price_volume,eligible,sufficient market coverage and history
+momentum_6m,price_volume,eligible,sufficient market coverage and history
+momentum_12m,price_volume,eligible,sufficient market coverage and history
+volatility_1m,risk,eligible,sufficient market coverage and history
+volatility_3m,risk,eligible,sufficient market coverage and history
+turnover_1m,price_volume,eligible,sufficient market coverage and history
+turnover_3m,price_volume,eligible,sufficient market coverage and history
+liquidity_1m,price_volume,eligible,sufficient market coverage and history
+mom_60_20d,price_volume,watch_only,Implemented library variant; excluded from lifecycle to limit near-duplicate horizons.
+mom_120_20d,price_volume,watch_only,Implemented library variant; excluded from lifecycle to limit near-duplicate horizons.
+mom_250_20d,price_volume,watch_only,Implemented library variant; excluded from lifecycle to limit near-duplicate horizons.
+lowvol_120d,risk,watch_only,Implemented; watch-only because lifecycle set already contains two volatility horizons.
+lowvol_250d,risk,watch_only,Implemented; watch-only because lifecycle set already contains two volatility horizons.
+lowturn_20d,price_volume,watch_only,Monotonic duplicate of turnover_1m under rank-based evaluation.
+lowturn_60d,price_volume,watch_only,Monotonic duplicate of turnover_3m under rank-based evaluation.
+bp,value,rejected,formal PIT cross-section has only five tickers
+ep,value,rejected,formal PIT cross-section has only five tickers
+sp,value,rejected,formal PIT cross-section has only five tickers
+cfp,value,rejected,formal PIT cross-section has only five tickers
+value_composite_raw,value,rejected,formal PIT cross-section has only five tickers
+size,size,watch_only,Market cap is available but size is reserved as a neutralization exposure in this run.
+roe,quality,rejected,formal PIT cross-section has only five tickers
+gross_profitability,quality,rejected,formal PIT cross-section has only five tickers
+ocf_to_assets,quality,rejected,formal PIT cross-section has only five tickers
+revenue_growth,growth,rejected,formal PIT cross-section has only five tickers
+earnings_growth,growth,rejected,formal PIT cross-section has only five tickers
+rolling_beta,risk,watch_only,Implemented but not included in the lifecycle run because the equal-weight proxy is not an investable benchmark.
+idiosyncratic_volatility,risk,watch_only,Implemented; watch-only pending benchmark and exposure validation.
+downside_beta,risk,watch_only,Implemented; watch-only pending benchmark and exposure validation.

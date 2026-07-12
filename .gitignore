@@ -6,6 +6,9 @@
 __pycache__/
 *.py[cod]
 *.pyo
+*.egg-info/
+build/
+dist/
 
 # Jupyter
 .ipynb_checkpoints/
@@ -33,6 +36,20 @@ data/processed/*
 *.pkl
 *.h5
 
+# Compact report tables are review artifacts, not data caches.
+!reports/**/*.csv
+
+# Regenerable report figures and formal-EOT parallel recompute shards.
+reports/**/figures/*.png
+reports/**/figures_*/*.png
+data/processed/eot_factor_lifecycle_test/shard_*_panel.parquet
+data/processed/eot_factor_lifecycle_test/shard_*_coordinates.parquet
+reports/eot_factor_lifecycle_test/shard_*_computation.csv
+
+# Explicit generated-cache roots
+.cache/
+artifacts/cache/
+
 # Result outputs
 results/figures/*
 results/tables/*
@@ -43,3 +60,9 @@ results/tables/*
 
 # Logs
 *.log
+
+# Local coverage/tooling outputs
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
