@@ -23,7 +23,7 @@ This checklist was produced after the formal 300-draw weekly run, not from the e
 | 17 | Experimental significance/deterioration weighting | Seven-method weight panel; clipped conservative penalties; monitoring-first positioning | Complete |
 | 18 | Walk-forward backtest and costs | Monthly as-of signals, 0/5/10/20 bps, stock and factor-weight turnover; all named outputs | Complete |
 | 19 | Synthetic validation | 20 replications for all required null/alternative/dependence scenarios; instability disclosed | Complete |
-| 20 | Unit tests | Focused 11/11 and full project 44/44 | Complete |
+| 20 | Unit tests | Focused formal module 11/11 and current full project 49/49 | Complete |
 | 21 | Performance diagnostics | Fixed references, cached samples/costs, four factor-level shards, failure isolation; 6,330 rows, zero failures | Complete |
 | 22 | Figures | 14 required monitoring, coordinate, calibration, baseline, dashboard, backtest and synthetic figures | Complete |
 | 23 | Final report | All 12 specified sections, limitations, positioning and resume wording | Complete |
@@ -35,7 +35,7 @@ This checklist was produced after the formal 300-draw weekly run, not from the e
 ## Machine-verifiable gates
 
 - `TASK_711_AUDIT_OK: 3165 weekly tests, 9495 coordinate rows, 14 figures`
-- `44 passed, 0 failed`
+- `49 passed, 0 failed` in the current full-project suite (`11 passed` in the focused formal EOT module)
 - `git diff --check`: clean
 - `n_bootstrap`: exactly 300 in every one of 6,330 IID/block diagnostic rows
 - `bootstrap_failures = 0`, `sinkhorn_failures = 0`
@@ -44,4 +44,3 @@ This checklist was produced after the formal 300-draw weekly run, not from the e
 ## Honest statistical outcome
 
 Completion means the requested implementation and experiment were executed; it does not mean every empirical hypothesis was favorable. The AR(1) dependent-null rejection rate remains 40% for the block extension versus 60% for IID in the 20-rep validation. Test-based allocation variants do not beat equal weighting after 10 bps. Both results are prominently disclosed rather than treated as missing or optimized away.
-
