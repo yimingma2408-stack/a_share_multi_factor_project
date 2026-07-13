@@ -12,7 +12,7 @@ from src.factor_lifecycle.lifecycle import (
     transaction_cost,
 )
 from src.factor_lifecycle.preprocessing import preprocess_factor_cross_section
-from scripts.run_eot_factor_lifecycle import _dynamic_cluster_map, _dynamic_redundancy_map
+from scripts.research.eot.run_eot_factor_lifecycle import _dynamic_cluster_map, _dynamic_redundancy_map
 
 
 def test_registry_directions_and_lifecycle_count():

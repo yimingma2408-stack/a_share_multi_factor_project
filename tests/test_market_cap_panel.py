@@ -1,6 +1,6 @@
 import pandas as pd
 
-from scripts.rebuild_akshare_fundamentals_with_market_cap import recalculate_factors, winsorized_zscore
+from scripts.data.preparation.rebuild_akshare_fundamentals_with_market_cap import recalculate_factors, winsorized_zscore
 from src.data.market_cap_panel import adapt_existing_market_cap
 
 

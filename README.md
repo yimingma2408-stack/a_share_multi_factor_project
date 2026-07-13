@@ -34,14 +34,14 @@ The project also contains broader financial/industry coverage experiments:
 - `RESEARCH_PROJECT_OUTLINE.md`: overall multifactor research outline.
 - `config/config.yaml`: central project settings.
 - `src/`: reusable research modules.
-- `scripts/run_outline_completion_audit.py`: current completion audit.
+- `scripts/audits/run_outline_completion_audit.py`: current completion audit.
 - `reports/completion_audit/outline_completion_audit.md`: generated audit.
 - `reports/eot_factor_drift_feasibility/`: existing EOT feasibility reports.
 - `reports/eot_factor_lifecycle_test/`: formal common-reference EOT-map two-sample tests, centered bootstrap calibration, coordinate diagnostics, test-based lifecycle monitoring and experimental weighting.
 - `reports/data_quality/point_in_time_coverage_audit.md`: formal eligibility decision for financial, industry and cap inputs.
 - `ARTIFACT_POLICY.md`: source/generated/cache boundary and safe shard cleanup policy.
-- `scripts/run_demo.py`: cached-data resume demo for five core market factors and EOT lifecycle monitoring.
-- `scripts/run_eot_map_lifecycle_test.py`: reproduce the formal test panel (`--bootstrap 300 --references 100` for the intended final calibration).
+- `scripts/workflows/run_demo.py`: cached-data resume demo for five core market factors and EOT lifecycle monitoring.
+- `scripts/research/eot/run_eot_map_lifecycle_test.py`: reproduce the formal test panel (`--bootstrap 300 --references 100` for the intended final calibration).
 - `reports/demo/`: compact demo report, figures, cost sensitivity, and backtest summaries.
 
 ## Repository Layout
@@ -52,16 +52,31 @@ data/         ignored raw inputs and processed research caches
 notebook/     exploratory work only
 reports/      reviewable conclusions and compact result tables
 results/      optional disposable exports
-scripts/      runnable pipeline, build, audit and cleanup entry points
+scripts/      runnable entry points grouped by data, research, audit, workflow and maintenance responsibilities
 src/          reusable research library
 tests/        automated verification
+```
+
+The runnable scripts are further grouped by responsibility:
+
+```text
+scripts/
+├── data/
+│   ├── acquisition/   downloads, fetches and source probes
+│   └── preparation/   processed-panel builds and rebuilds
+├── research/
+│   ├── factors/       factor studies and research reports
+│   └── eot/           EOT drift, lifecycle and robustness studies
+├── audits/            project, data and delivery checks
+├── workflows/         demo and full-pipeline orchestration
+└── maintenance/       hygiene checks and cache cleanup
 ```
 
 The boundary rules are defined in `ARTIFACT_POLICY.md`. Run the read-only
 hygiene check after changing the project structure:
 
 ```bash
-python scripts/check_project_hygiene.py --strict
+python scripts/maintenance/check_project_hygiene.py --strict
 ```
 
 The resume demo deliberately uses the dynamic market panel and excludes the experimental financial,
@@ -86,8 +101,8 @@ conda env create -f environment.yml
 ## Run The Current-State Audit
 
 ```bash
-python scripts/run_outline_completion_audit.py
-python scripts/run_pit_coverage_audit.py
+python scripts/audits/run_outline_completion_audit.py
+python scripts/audits/run_pit_coverage_audit.py
 ```
 
 The audit distinguishes `complete`, `conditional`, and `incomplete` evidence.
@@ -97,13 +112,13 @@ industry requirement is actually satisfied.
 ## Run The Pipeline
 
 ```bash
-python scripts/run_full_research_pipeline.py
+python scripts/workflows/run_full_research_pipeline.py
 ```
 
 The `--full` workflow includes an explicit formal EOT policy:
 
 ```bash
-python scripts/run_full_research_pipeline.py --full --formal-eot reuse
+python scripts/workflows/run_full_research_pipeline.py --full --formal-eot reuse
 ```
 
 - `reuse` validates and reuses delivered final 300-draw panels;

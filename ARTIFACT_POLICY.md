@@ -20,9 +20,9 @@ Research Markdown/CSV summaries are retained for review. PNG figures are regener
 
 ## Safe cleanup
 
-Use `python scripts/clean_generated_cache.py --confirm` to remove only ignored temporary formal-EOT shards. It never deletes final panels, raw data, source code, Markdown reports, or tracked files.
+Use `python scripts/maintenance/clean_generated_cache.py --confirm` to remove only ignored temporary formal-EOT shards. It never deletes final panels, raw data, source code, Markdown reports, or tracked files.
 
-Use `python scripts/check_project_hygiene.py` for a read-only boundary check. It reports root-level clutter, committed caches, missing keep-files, broken README path references, and temporary EOT shards. Pass `--strict` in CI when warnings should fail the job.
+Use `python scripts/maintenance/check_project_hygiene.py` for a read-only boundary check. It reports root-level clutter, committed caches, missing keep-files, broken README path references, and temporary EOT shards. Pass `--strict` in CI when warnings should fail the job.
 
 ## Repository layout
 

@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from scripts.run_demo import CORE_FACTORS, backward_signal_date, normalized_weights
+from scripts.workflows.run_demo import CORE_FACTORS, backward_signal_date, normalized_weights
 
 
 def test_demo_uses_five_core_factors():
