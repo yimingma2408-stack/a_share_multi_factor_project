@@ -15,7 +15,7 @@ This audit is a current filesystem check, not a historical completion claim.
 | lifecycle | complete | Formal EOT-map two-sample lifecycle diagnostics | `src/factor_lifecycle_test/eot_map_two_sample.py`; `data/processed/eot_factor_lifecycle_test/eot_map_test_panel.parquet`; `reports/eot_factor_lifecycle_test/eot_map_factor_lifecycle_final_report.md` | Formal common-reference maps, scaled statistic, 300-draw centered IID/block calibration, FDR and lifecycle outputs. |
 | portfolio | complete | Walk-forward allocation and transaction-cost comparison | `data/processed/eot_factor_lifecycle_test/backtest_nav_test_based.parquet`; `reports/eot_factor_lifecycle_test/backtest_summary_test_based.csv` | Completed as an experimental monitoring-extension comparison; not evidence of live alpha. |
 | reproducibility | complete | Installable, dependency-pinned environment and explicit formal-EOT cache policy | `pyproject.toml`; `requirements-lock.txt`; `environment.yml`; `scripts/run_full_research_pipeline.py` | `--full --formal-eot reuse|rerun|skip` explicitly controls final formal EOT handling. |
-| engineering | complete | Current-state tests and formal artifact audit | `tests/test_eot_map_lifecycle_test.py`; `tests/test_data_quality_and_attribution.py`; `scripts/audit_task_711.py` | Run `pytest` and `python scripts/audit_task_711.py` in the installed environment. |
+| engineering | complete | Current-state tests and formal artifact audit | `tests/test_eot_map_lifecycle_test.py`; `tests/test_data_quality_and_attribution.py`; `scripts/audit_formal_eot_delivery.py` | Run `pytest` and `python scripts/audit_formal_eot_delivery.py` in the installed environment. |
 
 ## Interpretation
 

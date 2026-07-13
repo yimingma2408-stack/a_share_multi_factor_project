@@ -44,7 +44,7 @@ def collect_requirements() -> list[Requirement]:
         "data/processed/eot_factor_lifecycle_test/eot_map_test_panel.parquet",
         "data/processed/eot_factor_lifecycle_test/eot_map_coordinate_diagnostics.parquet",
         "reports/eot_factor_lifecycle_test/eot_map_factor_lifecycle_final_report.md",
-        "reports/eot_factor_lifecycle_test/task_711_completion_audit.md",
+        "reports/eot_factor_lifecycle_test/formal_eot_delivery_audit.md",
     ))
     package_complete = all(exists(path) for path in ("pyproject.toml", "requirements.txt", "requirements-lock.txt", "environment.yml"))
     return [
@@ -55,7 +55,7 @@ def collect_requirements() -> list[Requirement]:
         Requirement("lifecycle", "Formal EOT-map two-sample lifecycle diagnostics", ("src/factor_lifecycle_test/eot_map_two_sample.py", "data/processed/eot_factor_lifecycle_test/eot_map_test_panel.parquet", "reports/eot_factor_lifecycle_test/eot_map_factor_lifecycle_final_report.md"), "complete" if formal_complete else "incomplete", "Formal common-reference maps, scaled statistic, 300-draw centered IID/block calibration, FDR and lifecycle outputs."),
         Requirement("portfolio", "Walk-forward allocation and transaction-cost comparison", ("data/processed/eot_factor_lifecycle_test/backtest_nav_test_based.parquet", "reports/eot_factor_lifecycle_test/backtest_summary_test_based.csv"), "complete" if exists("data/processed/eot_factor_lifecycle_test/backtest_nav_test_based.parquet") else "incomplete", "Completed as an experimental monitoring-extension comparison; not evidence of live alpha."),
         Requirement("reproducibility", "Installable, dependency-pinned environment and explicit formal-EOT cache policy", ("pyproject.toml", "requirements-lock.txt", "environment.yml", "scripts/run_full_research_pipeline.py"), "complete" if package_complete else "incomplete", "`--full --formal-eot reuse|rerun|skip` explicitly controls final formal EOT handling."),
-        Requirement("engineering", "Current-state tests and formal artifact audit", ("tests/test_eot_map_lifecycle_test.py", "tests/test_data_quality_and_attribution.py", "scripts/audit_task_711.py"), "complete" if exists("scripts/audit_task_711.py") else "incomplete", "Run `pytest` and `python scripts/audit_task_711.py` in the installed environment."),
+        Requirement("engineering", "Current-state tests and formal artifact audit", ("tests/test_eot_map_lifecycle_test.py", "tests/test_data_quality_and_attribution.py", "scripts/audit_formal_eot_delivery.py"), "complete" if exists("scripts/audit_formal_eot_delivery.py") else "incomplete", "Run `pytest` and `python scripts/audit_formal_eot_delivery.py` in the installed environment."),
     ]
 
 

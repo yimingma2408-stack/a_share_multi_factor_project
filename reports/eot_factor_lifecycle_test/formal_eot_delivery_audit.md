@@ -1,4 +1,4 @@
-# task_711 Completion Audit
+# Formal EOT Delivery Audit
 
 This checklist was produced after the formal 300-draw weekly run, not from the earlier pilot artifacts.
 
@@ -28,7 +28,7 @@ This checklist was produced after the formal 300-draw weekly run, not from the e
 | 22 | Figures | 14 required monitoring, coordinate, calibration, baseline, dashboard, backtest and synthetic figures | Complete |
 | 23 | Final report | All 12 specified sections, limitations, positioning and resume wording | Complete |
 | 24 | README | Method, findings, limitations and reproduction commands in report README; root README linked | Complete |
-| 25 | Named deliverables | `scripts/audit_task_711.py` confirms every named file exists and is non-empty | Complete |
+| 25 | Named deliverables | `scripts/audit_formal_eot_delivery.py` confirms every named file exists and is non-empty | Complete |
 | 26 | Required phase order | Audit/registry were written before the isolated formal namespace and legacy lifecycle remained untouched | Complete |
 | 27 | Final response content | Prepared from final data after this audit; no `done`-only response | Complete |
 

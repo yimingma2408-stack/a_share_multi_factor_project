@@ -41,7 +41,7 @@ def main() -> None:
         run([sys.executable, "scripts/run_final_factor_research_report.py"])
         if args.formal_eot == "reuse":
             # Reuse means validate the delivered 300-draw panel; it never silently substitutes legacy distance output.
-            run([sys.executable, "scripts/audit_task_711.py"])
+            run([sys.executable, "scripts/audit_formal_eot_delivery.py"])
         elif args.formal_eot == "rerun":
             run([
                 sys.executable,

@@ -4,7 +4,7 @@ This repository covers point-in-time A-share data preparation, factor
 construction, single-factor validation, multifactor weighting, portfolio
 backtesting, transaction-cost analysis, attribution, robustness checks, and a
 final reproducible research report. The delivered formal EOT-map extension and
-its acceptance criteria are recorded in `task_711.md`.
+its acceptance criteria are recorded in `FORMAL_EOT_RESEARCH_SPEC.md`.
 
 ## Current Position
 
@@ -30,7 +30,8 @@ The project also contains broader financial/industry coverage experiments:
 
 ## Important Paths
 
-- `task_711.md`: formal EOT-map research scope and acceptance criteria.
+- `FORMAL_EOT_RESEARCH_SPEC.md`: formal EOT-map research scope and acceptance criteria.
+- `RESEARCH_PROJECT_OUTLINE.md`: overall multifactor research outline.
 - `config/config.yaml`: central project settings.
 - `src/`: reusable research modules.
 - `scripts/run_outline_completion_audit.py`: current completion audit.

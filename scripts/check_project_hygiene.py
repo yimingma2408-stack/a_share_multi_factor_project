@@ -15,8 +15,8 @@ ALLOWED_ROOT_FILES = {
     "pyproject.toml",
     "requirements-lock.txt",
     "requirements.txt",
-    "task_711.md",
-    "A股多因子选股项目大纲.md",
+    "FORMAL_EOT_RESEARCH_SPEC.md",
+    "RESEARCH_PROJECT_OUTLINE.md",
 }
 ALLOWED_ROOT_DIRS = {
     ".git",
