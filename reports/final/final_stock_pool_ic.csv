@@ -1,0 +1,3 @@
+factor_name,mean_rank_ic,std_rank_ic,rank_icir,rank_ic_win_rate,observations,stock_pool
+ep_industry_size_neutral_z,0.03443887590086898,0.13767613106208942,0.2501441290889971,0.5677966101694916,118,full_value_coverage
+ep_industry_size_neutral_z,0.056166462384152634,0.1722885393339407,0.32600231333604374,0.6554621848739496,119,high_liquidity_half
