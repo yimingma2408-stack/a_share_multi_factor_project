@@ -202,7 +202,7 @@ def write_factor_summary(perf: pd.DataFrame, lifecycle: pd.DataFrame) -> pd.Data
 
 def make_figures(lifecycle: pd.DataFrame, nav: pd.DataFrame, summary: pd.DataFrame) -> None:
     sns.set_theme(style="whitegrid")
-    lifecycle.pivot(index="date", columns="factor_name", values="smoothed_eot_drift").plot(figsize=(11, 5), title="Core factor EOT drift (EWMA half-life 8)")
+    lifecycle.pivot(index="date", columns="factor_name", values="smoothed_eot_drift").plot(figsize=(11, 5), title="Smoothed factor drift z-score (EWMA half-life 8 weeks)")
     plt.tight_layout(); plt.savefig(FIG / "factor_drift_timeline.png", dpi=140); plt.close()
     states = {"Dormant": 0, "Decaying": 1, "Watch": 2, "Recovering": 3, "Healthy": 4}
     matrix = lifecycle.assign(state_code=lifecycle["lifecycle_state"].map(states)).pivot(index="factor_name", columns="date", values="state_code")
@@ -212,52 +212,175 @@ def make_figures(lifecycle: pd.DataFrame, nav: pd.DataFrame, summary: pd.DataFra
     summary.pivot(index="cost_bps", columns="strategy", values="sharpe").plot(marker="o", figsize=(10, 5), title="Transaction-cost sensitivity"); plt.tight_layout(); plt.savefig(FIG / "transaction_cost_sensitivity.png", dpi=140); plt.close()
 
 
-def write_report(summary: pd.DataFrame, lifecycle: pd.DataFrame, backtest: pd.DataFrame, elapsed: float) -> None:
-    latest = summary.sort_values("health_score" if "health_score" in summary else "icir", ascending=False).head(3)
-    state_counts = lifecycle["lifecycle_state"].value_counts(normalize=True).round(4).to_dict()
-    at10 = backtest[backtest["cost_bps"].eq(10)].sort_values("sharpe", ascending=False)
-    best = at10.iloc[0] if not at10.empty else None
-    best_name = str(best["strategy"]) if best is not None else "NA"
-    best_sharpe = f"{best['sharpe']:.3f}" if best is not None and pd.notna(best["sharpe"]) else "NA"
+def markdown_table(frame: pd.DataFrame) -> str:
+    """Render a small DataFrame without requiring the optional tabulate package."""
+    columns = [str(column) for column in frame.columns]
+    rows = [[str(value).replace("|", "\\|") for value in row] for row in frame.itertuples(index=False, name=None)]
+    header = "| " + " | ".join(columns) + " |"
+    separator = "| " + " | ".join(["---"] * len(columns)) + " |"
+    body = ["| " + " | ".join(row) + " |" for row in rows]
+    return "\n".join([header, separator, *body])
+
+
+def write_report(
+    factor_summary: pd.DataFrame,
+    lifecycle: pd.DataFrame,
+    backtest: pd.DataFrame,
+    nav: pd.DataFrame,
+    weights: pd.DataFrame,
+    elapsed: float,
+) -> None:
+    latest = lifecycle.sort_values("date").groupby("factor_name").tail(1)
+    latest = latest[["factor_name", "lifecycle_state", "historical_icir", "recent_icir", "eot_drift", "smoothed_eot_drift", "drift_percentile"]]
+    factor_view = factor_summary[["factor_name", "coverage_ratio", "mean_rank_ic", "icir"]].merge(
+        latest, on="factor_name", how="left"
+    ).sort_values("icir", ascending=False)
+    factor_table = factor_view.rename(columns={
+        "factor_name": "Factor", "coverage_ratio": "Coverage", "mean_rank_ic": "Mean Rank IC",
+        "icir": "Full ICIR", "lifecycle_state": "Latest state", "historical_icir": "Historical ICIR",
+        "recent_icir": "Recent ICIR", "eot_drift": "Raw drift", "smoothed_eot_drift": "Smoothed drift z-score",
+        "drift_percentile": "Drift percentile",
+    })
+    for column in ["Coverage", "Drift percentile"]:
+        factor_table[column] = factor_table[column].map(lambda x: f"{x:.1%}" if pd.notna(x) else "NA")
+    for column in ["Mean Rank IC", "Full ICIR", "Historical ICIR", "Recent ICIR", "Raw drift", "Smoothed drift z-score"]:
+        factor_table[column] = factor_table[column].map(lambda x: f"{x:.3f}" if pd.notna(x) else "NA")
+
+    at10 = backtest[backtest["cost_bps"].eq(10)].sort_values("sharpe", ascending=False).copy()
+    backtest_table = at10[["strategy", "annual_return", "annual_volatility", "sharpe", "max_drawdown", "monthly_win_rate", "average_turnover"]].rename(columns={
+        "strategy": "Strategy", "annual_return": "Annual return", "annual_volatility": "Annual volatility",
+        "sharpe": "Sharpe*", "max_drawdown": "Max drawdown", "monthly_win_rate": "Monthly win rate",
+        "average_turnover": "Average turnover",
+    })
+    for column in ["Annual return", "Annual volatility", "Max drawdown", "Monthly win rate", "Average turnover"]:
+        backtest_table[column] = backtest_table[column].map(lambda x: f"{x:.1%}" if pd.notna(x) else "NA")
+    backtest_table["Sharpe*"] = backtest_table["Sharpe*"].map(lambda x: f"{x:.3f}" if pd.notna(x) else "NA")
+
+    cost_view = backtest.pivot(index="strategy", columns="cost_bps", values="annual_return").reindex(columns=[0, 10, 20])
+    cost_view.columns = ["0 bps", "10 bps", "20 bps"]
+    cost_view = cost_view.reset_index().rename(columns={"strategy": "Strategy"})
+    for column in ["0 bps", "10 bps", "20 bps"]:
+        cost_view[column] = cost_view[column].map(lambda x: f"{x:.1%}" if pd.notna(x) else "NA")
+
+    latest_weight_date = pd.to_datetime(weights["date"]).max()
+    weight_view = weights[(weights["date"].eq(latest_weight_date)) & weights["weighting_method"].isin(["icir", "eot_penalty"])]
+    weight_view = weight_view.pivot(index="factor_name", columns="weighting_method", values="final_weight").reindex(CORE_FACTORS).reset_index()
+    weight_view = weight_view.rename(columns={"factor_name": "Factor", "icir": "ICIR weight", "eot_penalty": "EOT-penalty weight"})
+    for column in ["ICIR weight", "EOT-penalty weight"]:
+        weight_view[column] = weight_view[column].map(lambda x: f"{x:.1%}" if pd.notna(x) else "NA")
+
+    best = at10.iloc[0]
+    best_name = str(best["strategy"])
+    best_sharpe = float(best["sharpe"])
+    long_term_best = factor_view.iloc[0]
+    watch_names = factor_view.loc[factor_view["lifecycle_state"].eq("Watch"), "factor_name"].tolist()
+    highest_drift = factor_view.sort_values("drift_percentile", ascending=False).iloc[0]
+    icir10 = at10.set_index("strategy").loc["icir"]
+    eot10 = at10.set_index("strategy").loc["eot_penalty"]
+    eot_sharpe_delta = float(eot10["sharpe"] - icir10["sharpe"])
+    eot_return_delta = float(eot10["annual_return"] - icir10["annual_return"])
+
+    panel_tickers = pd.read_parquet(PANEL_PATH, columns=["ticker"])["ticker"].nunique()
+    drift_metadata = read_parquet(PROCESSED / "weekly_eot_factor_drift_scores.parquet")
+    drift_status = drift_metadata["status"].value_counts(normalize=True)
+    fallback_share = float(drift_status.get("fallback", 0.0))
+    base_observations = int(drift_metadata["n_base"].mode().iloc[0])
+    recent_observations = int(drift_metadata["n_recent"].mode().iloc[0])
+    drift_implementation = (
+        f"{fallback_share:.0%} of cached observations use the covariance/mean-shift fallback because POT was unavailable when the drift file was generated"
+        if fallback_share > 0
+        else "the cached observations use the EOT barycentric-map implementation"
+    )
+    nav_dates = pd.to_datetime(nav["date"])
+    unique_months = nav_dates.nunique()
+    active_min = int(nav["active_universe_count"].min())
+    active_max = int(nav["active_universe_count"].max())
+    selected_min = int(nav["number_of_selected_stocks"].min())
+    selected_max = int(nav["number_of_selected_stocks"].max())
+    latest_date = pd.to_datetime(lifecycle["date"]).max().date().isoformat()
+    watch_text = ", ".join(f"`{name}`" for name in watch_names) if watch_names else "none"
+    allocation_verdict = "did not improve on" if eot_sharpe_delta <= 0 else "improved on"
+
     report = f"""# A-Share Factor Failure Monitoring Demo
 
-## Executive Summary
+## Executive summary
 
-This resume-oriented demo uses the dynamic HS300 market dataset and five core price/volume factors. It is designed to demonstrate a reproducible factor-monitoring workflow, not to claim a live trading strategy.
+This demo evaluates five price/volume factors in the dynamic HS300 universe and uses an EOT-style distribution-drift signal as a factor-failure monitor. The evidence supports a cautious conclusion: the monitoring layer identifies meaningful deterioration, but the drift-based allocation overlay is not yet a performance improvement.
 
-- Historical dynamic universe: **627 distinct stocks**.
-- Average active universe: approximately **296 stocks per period**.
-- Monthly stock selection: top 20% of the valid universe, typically **about 50–60 stocks**.
-- Core factors: reversal, three-month momentum, low volatility, low turnover, and liquidity.
-- Pipeline runtime using cached data: {elapsed:.1f} seconds.
+- **Sample:** {nav_dates.min().date().isoformat()} to {nav_dates.max().date().isoformat()}, {unique_months} monthly observations and {panel_tickers} distinct historical constituents.
+- **Portfolio breadth:** {active_min}–{active_max} eligible stocks per rebalance; the top 20% rule selected {selected_min}–{selected_max} stocks.
+- **Current warning:** {watch_text} are in `Watch` as of {latest_date}.
+- **Backtest headline:** at 10 bps, `{best_name}` ranked first with {best["annual_return"]:.1%} annualized return, {best_sharpe:.3f} Sharpe and {best["max_drawdown"]:.1%} maximum drawdown.
+- **EOT allocation result:** EOT-penalty weighting {allocation_verdict} plain ICIR weighting; the Sharpe difference was {eot_sharpe_delta:+.3f} and annual-return difference was {eot_return_delta:+.1%} at 10 bps.
+- **Implementation disclosure:** {drift_implementation}; these results should therefore be described as fallback drift diagnostics, not full EOT-map estimates.
+- Cached pipeline runtime: {elapsed:.1f} seconds.
 
-## 1. Which factors are stable?
+## 1. Factor evidence and current lifecycle state
 
-`factor_summary.csv` contains weekly Rank IC, ICIR, long-short return, coverage and the latest lifecycle state. The latest state distribution is `{state_counts}`. Healthy and Recovering states are treated as monitoring labels, not automatic buy signals.
+The full-sample factor statistics and latest monitoring signals are shown below. `Full ICIR` is descriptive over the entire sample; the historical and recent ICIR inputs used for the state label are lagged to avoid look-ahead. `Raw drift` is a distance and is therefore non-negative. `Smoothed drift z-score` standardizes raw drift against the factor's own prior expanding history and then applies an 8-week-half-life EWMA, so it can be negative when current drift is below its historical norm.
 
-## 2. Which factors show structural drift?
+{markdown_table(factor_table)}
 
-EOT compares a 156-week base distribution with a 26-week recent distribution using `(RankIC, LSReturn, DownsideReturn)`. The primary smoothed signal uses EWMA half-life 8. High drift is a warning that the factor's joint performance distribution has changed; it is not interpreted as a standalone return forecast.
+The strongest full-sample Rank IC consistency came from `{long_term_best["factor_name"]}` (ICIR {long_term_best["icir"]:.3f}). The latest snapshot nevertheless shows that {watch_text} have moved from positive historical ICIR to negative recent ICIR, which is direct evidence of deterioration rather than merely high EOT distance. `{highest_drift["factor_name"]}` has the highest current drift percentile ({highest_drift["drift_percentile"]:.1%}); because its state is `{highest_drift["lifecycle_state"]}`, drift should be interpreted as distribution change, not automatically as factor decay.
 
-## 3. Does EOT help identify factor state changes?
+![Smoothed factor drift z-score by factor](figures/factor_drift_timeline.png)
 
-The lifecycle labels combine past-only historical ICIR, recent ICIR, quality trend and the expanding historical percentile of smoothed drift. Early periods with insufficient history are Dormant. The state timeline and drift timeline are provided as the main visual evidence.
+## 2. What the lifecycle chart says
 
-## 4. Does EOT add allocation value?
+The drift input compares a {base_observations}-week base distribution with a {recent_observations}-week recent distribution of Rank IC, long-short return and downside return. The lifecycle model then combines lagged 104-week historical ICIR, lagged 26-week recent ICIR, their change, and the expanding percentile of EWMA-smoothed drift. Early observations without enough history are `Dormant`, so the heatmap should be read from left to right rather than by comparing raw counts of states.
 
-The demo compares equal-factor, ICIR-weighted and conservative EOT-penalty weighting in a monthly walk-forward backtest. At 10 bps, the best observed strategy is `{best_name}` with Sharpe `{best_sharpe}`. The intended conclusion is that EOT has primary monitoring value and only experimental secondary allocation value. Results are historical and not evidence of live tradability.
+![Factor lifecycle states](figures/lifecycle_state_heatmap.png)
+
+The chart's practical use is monitoring: it separates persistent healthy periods from episodes that deserve review. It does not turn a `Healthy` label into a buy signal or a `Watch` label into an automatic exclusion.
+
+## 3. Walk-forward backtest
+
+The table reports the three allocation rules after a 10 bps one-way turnover charge.
+
+{markdown_table(backtest_table)}
+
+![Strategy NAV after 10 bps cost](figures/strategy_nav.png)
+
+At this cost assumption, `{best_name}` delivered the highest risk-adjusted result. EOT-penalty weighting produced {eot10["annual_return"]:.1%} annualized return and {eot10["sharpe"]:.3f} Sharpe versus {icir10["annual_return"]:.1%} and {icir10["sharpe"]:.3f} for ICIR weighting. Therefore, this run supports distribution drift as a diagnostic overlay, but not the claim that the current penalty function adds allocation value.
+
+The latest weights also illustrate the mechanism: the drift penalty only scales non-negative ICIR signals, with a penalty floor of 0.5.
+
+{markdown_table(weight_view)}
+
+## 4. Transaction-cost sensitivity
+
+Annualized return declines monotonically as the assumed one-way cost rises from 0 to 20 bps:
+
+{markdown_table(cost_view)}
+
+![Transaction-cost sensitivity](figures/transaction_cost_sensitivity.png)
+
+The strategies retain positive historical annualized returns at 20 bps, but the gap between gross and net results is material because average monthly turnover is roughly 45%–49%. This is a sensitivity check, not a complete execution model.
 
 ## Method and safeguards
 
-- Forward returns are computed after factor values and are never inputs to factor construction.
-- Monthly signals use the latest weekly signal no later than the rebalance date.
-- ST and suspended stocks are filtered; the portfolio takes the top 20% of valid stocks with equal stock weights.
-- Costs are tested at 0, 10 and 20 bps one-way.
-- Financial, industry and free-float-cap proxy extensions are intentionally excluded from headline backtests and remain experimental future work.
+- Factor values are constructed before one-month forward returns and never use those forward returns as inputs.
+- Monthly rebalances use the latest weekly monitoring signal no later than the rebalance date.
+- The active universe requires current HS300 membership, normal trading status and non-ST status.
+- Five cross-sectional factor z-scores are combined, and the top 20% of valid stocks are equally weighted.
+- `equal` uses equal factor weights; `icir` normalizes positive rolling ICIR; `eot_penalty` additionally scales positive ICIR by smoothed drift.
+- The cached drift input uses {base_observations} base weeks and {recent_observations} recent weeks; {drift_implementation}.
+- Costs are modeled as turnover multiplied by 0, 10 or 20 bps one-way.
+- *Sharpe is implemented here as annualized compound return divided by annualized monthly volatility, with no risk-free-rate adjustment.*
 
-## Limitations and positioning
+## Limitations
 
-The dynamic HS300 constituent history, adjusted-price vendor assumptions, simplified execution, approximate costs and lack of revision-aware fundamentals limit inference. This is best presented as an **A-share factor failure-monitoring prototype with EOT**, not as a validated live strategy.
+The results depend on the reconstructed dynamic HS300 history, adjusted-price vendor conventions and a simplified monthly execution model. The backtest does not model limit-up/limit-down execution, market impact, liquidity capacity or point-in-time fundamental revisions. Industry, fundamentals and free-float-cap neutralization are not included. Most importantly, the current cached drift data use the fallback implementation noted above; full EOT barycentric-map results require regenerating that input with POT available. Thresholds and penalty strength are research choices and have not been validated out of sample.
+
+Accordingly, this project is best presented as an **A-share factor failure-monitoring prototype with an experimental allocation overlay**, not as a validated live strategy.
+
+## Reproducibility and artifacts
+
+- Run: `python scripts/workflows/run_demo.py`
+- Factor statistics: [`factor_summary.csv`](factor_summary.csv)
+- Backtest statistics: [`backtest_summary.csv`](backtest_summary.csv)
+- Cost sensitivity: [`transaction_cost_sensitivity.csv`](transaction_cost_sensitivity.csv)
+- Machine-readable lifecycle, weights and NAV files: `../../data/processed/demo/`
 """
     (REPORT / "demo_report.md").write_text(report, encoding="utf-8")
     (REPORT / "README.md").write_text("""# Resume Demo\n\nRun `python scripts/workflows/run_demo.py`. This demo uses cached dynamic HS300 market data and five core market factors. Financial, industry and free-float-cap coverage expansion is experimental and is not used in headline backtests.\n\nThe demo is for research presentation and does not establish live tradability.\n""", encoding="utf-8")
@@ -270,7 +393,7 @@ def main() -> None:
     nav, backtest = build_backtest(weights)
     summary = write_factor_summary(perf, lifecycle)
     make_figures(lifecycle, nav, backtest)
-    write_report(summary, lifecycle, backtest, time.time() - start)
+    write_report(summary, lifecycle, backtest, nav, weights, time.time() - start)
     print(f"Demo complete: {REPORT}")
 
 
