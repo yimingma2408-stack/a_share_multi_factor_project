@@ -6,6 +6,17 @@ The project has been upgraded from an unscaled, distance-based EOT drift diagnos
 
 The clearest value is **monitoring**, not allocation. At 10 bps, equal eligible factors have the best observed Sharpe (0.022); all formal test-weighting variants are lower. The block extension improves the dependent-null synthetic rejection rate from 60% to 40%, but remains far above nominal size. The project is suitable as a transparent research/engineering portfolio piece if these caveats remain prominent; no allocation-alpha or live-trading claim is warranted.
 
+### Evidence at a glance
+
+| Evidence | Result | Interpretation |
+| --- | ---: | --- |
+| Factor-date EOT tests | 3,165 | Ten factors monitored through time |
+| Coordinate diagnostic rows | 9,495 | Three performance coordinates per test |
+| Block-bootstrap raw rejection | 27.1% | More warnings than the IID benchmark |
+| Cross-factor FDR rejection | 23.4% | Warnings that survive same-date multiplicity control |
+| Most common dominant change | Downside return, 2,181 tests | Tail behavior drives most detected distribution changes |
+| Best strategy at 10 bps | Equal, Sharpe 0.022 | Test-based weighting did not add allocation value |
+
 ## 2. Difference from the Previous Version
 
 The old output was the average squared distance between base and recent barycentric maps. It was neither Sinkhorn transport cost nor a calibrated test. The new implementation retains that unscaled distance, adds `nm/(n+m)` scaling, and compares the scaled statistic with a centered bootstrap null. Raw and FDR-adjusted p-values replace interpretations based only on `eot_drift_zscore`; the old drift panels remain untouched as baselines.
@@ -20,23 +31,69 @@ The sign convention is `D = T_recent - T_base`. The formal statistic is
 \mathcal T_{n,m}=\frac{nm}{n+m}\frac1N\sum_l\|D(U_l)\|^2.
 \]
 
+| Design choice | Main specification |
+| --- | --- |
+| Performance vector | `(Rank IC, long-short return, downside return)` |
+| Base / recent windows | 156 / 26 weeks, both strictly before the monitoring date |
+| Scaling | Base-window median and `1.4826 × MAD` |
+| Reference distribution | 100 fixed draws from the three-dimensional unit ball |
+| Entropic regularization | `0.2 ×` pooled median non-zero squared distance |
+| Formal statistic | Effective sample size × common-reference mean squared map difference |
+| Calibration | 300 IID and 300 eight-week block multiplier draws |
+| Multiplicity | Same-date cross-factor BH-FDR at 10% |
+| Persistent warning | At least two FDR rejections in the latest three monitoring endpoints |
+
 ## 4. Bootstrap Calibration
 
 IID exponential weights reproduce weighted empirical maps. Null draws use centered increments, not the direct distance between bootstrap maps. The block extension shares a multiplier within consecutive eight-week blocks. IID is the paper-faithful benchmark; block is only a dependence-robust exploratory calibration. The 20-replication synthetic results reveal material dependent-null oversizing and do not establish general size control. See `bootstrap_calibration_report.md`.
 
 The final rolling panel uses 300 draws per IID and block calibration, with zero recorded bootstrap or Sinkhorn failures. A separate 90-row latest-window robustness exercise covers reference sizes 50/100/200, epsilon scales 0.1/0.2/0.5 and block lengths 4/8/13. Rejection rates vary across these finite settings, so the main parameters remain pre-specified rather than selected from backtest performance.
 
+![Synthetic validation rejection rates](figures/19_synthetic_rejection_rates.png)
+
+The synthetic experiment behaves well under the Gaussian and Student-t IID nulls, but the mixture null rejects 15% of the time. Under the AR(1) null, block multipliers reduce rejection from 60% to 40%, still well above the nominal 5% line. With only 20 replications per scenario, these rates are directional diagnostics rather than precise size estimates.
+
 ## 5. Global Test Results
 
 Block raw rejection rates are highest for `turnover_1m` (33.2%), `volatility_3m` (33.2%), `volatility_1m` (31.7%), `turnover_3m` (31.6%) and `momentum_3m` (29.4%). Cross-factor FDR rejects 23.4% of all panel rows; 23.4% satisfy the rolling two-of-three persistence rule. IID raw rejection is 19.1%, compared with block raw rejection of 27.1%. These are calibrated sample diagnostics, not definitive population statements.
+
+| Factor | Block raw rejection rate |
+| --- | ---: |
+| `turnover_1m` | 33.2% |
+| `volatility_3m` | 33.2% |
+| `volatility_1m` | 31.7% |
+| `turnover_3m` | 31.6% |
+| `momentum_3m` | 29.4% |
+
+![Factors with the highest block-bootstrap rejection rates](figures/15_factor_rejection_rates.png)
 
 ## 6. Coordinate Diagnostics
 
 Downside return supplies the largest squared-change contribution in 2,181 rows, long-short return in 787 and Rank IC in 197. Dominant deterioration is downside return in 1,564 rows, long-short return in 876 and Rank IC in 725. “Largest change contribution” is deliberately separated from “largest deterioration contribution”; neither is causal attribution.
 
+| Coordinate | Largest-change count | Dominant-deterioration count |
+| --- | ---: | ---: |
+| Rank IC | 197 | 725 |
+| Long-short return | 787 | 876 |
+| Downside return | 2,181 | 1,564 |
+
+![Coordinate contribution and deterioration counts](figures/16_coordinate_diagnostic_counts.png)
+
+The contrast matters: Rank IC is rarely the largest squared-change coordinate, yet it is the dominant deterioration coordinate in 725 tests. A metric can contribute less to total movement while still supplying the most adverse directional evidence.
+
 ## 7. Lifecycle States
 
 The panel classifies 1,126 Healthy, 950 Watch, 220 Decaying, 364 Recovering and 505 Dormant observations. Rules combine past-only historical/recent ICIR, quality trend, FDR rejection, persistent warning and signed core-coordinate deterioration. Reasons are stored per row, making states more interpretable than the legacy smoothed-distance threshold.
+
+| Lifecycle state | Observations | Share |
+| --- | ---: | ---: |
+| Healthy | 1,126 | 35.6% |
+| Watch | 950 | 30.0% |
+| Decaying | 220 | 7.0% |
+| Recovering | 364 | 11.5% |
+| Dormant | 505 | 16.0% |
+
+![Test-based lifecycle state distribution](figures/17_lifecycle_state_counts.png)
 
 ## 8. Monitoring Value
 
@@ -45,6 +102,20 @@ The test detects joint changes in predictive rank association, long-short payoff
 ## 9. Allocation Value
 
 Seven walk-forward variants compare equal factors, ICIR, old distance penalty, formal significance penalty, signed penalty and two lifecycle filters at 0/5/10/20 bps. At 10 bps, equal weighting leads with Sharpe 0.022; old distance penalty is -0.157, formal significance penalty -0.170 and formal signed penalty -0.173. Thus formal calibration improves interpretability but does **not** add demonstrated allocation value or cost-robust alpha in this sample.
+
+| Strategy at 10 bps | Annual return | Sharpe | Max drawdown |
+| --- | ---: | ---: | ---: |
+| Equal eligible | 0.04% | 0.022 | -3.54% |
+| Old distance EOT | -0.65% | -0.157 | -11.27% |
+| ICIR weighting | -0.65% | -0.157 | -11.34% |
+| Formal significance penalty | -0.70% | -0.170 | -11.50% |
+| Formal signed penalty | -0.72% | -0.173 | -11.49% |
+| Conservative lifecycle filter | -0.89% | -0.224 | -12.04% |
+| Lifecycle filter | -1.41% | -0.355 | -15.23% |
+
+![Strategy Sharpe after 10 bps](figures/18_strategy_sharpe_10bps.png)
+
+The allocation comparison is economically clear rather than merely statistically inconclusive: every adaptive weighting variant trails the equal baseline at 10 bps. The EOT-map layer therefore earns its place as a monitoring and attribution tool, not as demonstrated alpha.
 
 ## 10. Limitations
 
